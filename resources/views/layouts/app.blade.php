@@ -62,89 +62,271 @@
             @endif
 
             <div class="flex flex-1 overflow-hidden relative">
-                <aside class="hidden lg:flex lg:flex-col w-16 bg-white border-r border-gray-200 shadow-sm py-4 flex-shrink-0">
-                    <div class="flex flex-col items-center gap-3 px-1 text-center">
-                        <a href="{{ route('dashboard') }}" title="Inicio" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('dashboard') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-5.5a1.5 1.5 0 0 0-3 0V21H4a1 1 0 0 1-1-1V9.5z"/></svg>
-                        </a>
-                        @if(auth()->user()->role === 'psicologo')
-                            <a href="{{ route('agenda.index') }}" title="Agenda" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('agenda.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            </a>
-                            <a href="{{ route('horarios.index') }}" title="Horarios" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('horarios.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12 6 12 12 16 14"/></svg>
-                            </a>
-                            {{-- <a href="{{ route('pacientes.index') }}" title="Pacientes" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('pacientes.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
-                                    <path d="M4 20c0-3.31 2.69-6 6-6h4c3.31 0 6 2.69 6 6v1H4v-1z" />
-                                </svg>
-                            </a> --}}
-                            <a href="{{ route('historias.index') }}" title="Historias Clínicas" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('historias.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M9 2H15a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V4a2 2 0 0 1 2-2z" />
-                                    <path d="M9 7h6" />
-                                    <path d="M9 11h6" />
-                                    <path d="M9 15h6" />
-                                </svg>
-                            </a>
-                            <a href="{{ route('enfermedades.index') }}" title="Enfermedades" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('enfermedades.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
-                            </a>
-                            <a href="{{ route('plantillas.index') }}" title="Plantillas de Secciones" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('plantillas.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                                    <line x1="9" y1="21" x2="9" y2="9"></line>
-                                </svg>
-                            </a>
-                        @elseif(auth()->user()->role === 'admin')
-                            {{-- Gestión de Usuarios (Nuevo) --}}
-                            <a href="{{ route('admin.users.index') }}" title="Gestionar Usuarios" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('admin.users.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
-                            </a>
-                            {{-- Citas Globales --}}
-                            <a href="{{ route('citas.index') }}" title="Todas las Citas" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('citas.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            </a>
-                            {{-- Pacientes Globales --}}
-                            {{-- <a href="{{ route('pacientes.index') }}" title="Todos los Pacientes" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('pacientes.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
-                                    <path d="M4 20c0-3.31 2.69-6 6-6h4c3.31 0 6 2.69 6 6v1H4v-1z" />
-                                </svg>
-                            </a> --}}
-                        @elseif(auth()->user()->role === 'paciente')
-                            <a href="{{ route('citas.index') }}" title="Mis citas" class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition hover:bg-blue-50 {{ request()->routeIs('citas.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-500' }}">
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10h-6V4H9v6H3"/><path d="M3 18h18"/><path d="M18 14V6"/></svg>
-                            </a>
-                        @endif
+                <aside 
+                    x-data="{ sidebarOpen: false }"
+                    :class="sidebarOpen ? 'w-56' : 'w-16'"
+                    class="hidden lg:flex lg:flex-col w-16 bg-white border-r border-gray-200 shadow-sm py-4 flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden z-20 relative"
+                >
+                    {{-- Toggle Button --}}
+                    <div class="flex items-center px-2 mb-3" :class="sidebarOpen ? 'justify-end' : 'justify-center'">
+                        <button 
+                            @click="sidebarOpen = !sidebarOpen" 
+                            class="inline-flex items-center justify-center h-9 w-9 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 focus:outline-none"
+                            :title="sidebarOpen ? 'Contraer menú' : 'Expandir menú'"
+                        >
+                            <svg 
+                                class="h-5 w-5 transition-transform duration-300" 
+                                :class="sidebarOpen ? 'rotate-180' : ''"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            >
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
 
-                        {{-- Botón de Mensajería Global --}}
-                        @if(auth()->user()->role !== 'admin')
+                    {{-- Separator --}}
+                    <div class="mx-3 mb-3 border-t border-gray-100"></div>
+
+                    {{-- Navigation Links --}}
+                    <nav class="flex flex-col gap-0.5 px-2 flex-1 overflow-y-auto overflow-x-hidden">
+                        {{-- Inicio (no sub-items) --}}
+                        <a href="{{ route('dashboard') }}" 
+                           class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                           :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                           title="Inicio"
+                        >
+                            <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-5.5a1.5 1.5 0 0 0-3 0V21H4a1 1 0 0 1-1-1V9.5z"/></svg>
+                            <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300"
+                                  :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                            >Inicio</span>
+                        </a>
+
+                        @if(auth()->user()->role === 'psicologo')
+                            {{-- ══════ AGENDA ══════ --}}
+                            <div x-data="{ subOpen: {{ request()->routeIs('agenda.*') ? 'true' : 'false' }} }">
+                                <div class="flex items-center">
+                                    <a :href="sidebarOpen ? '#' : '{{ route('agenda.index') }}'"
+                                       @click="if(sidebarOpen) { $event.preventDefault(); subOpen = !subOpen; }"
+                                       class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 flex-1 min-w-0 {{ request()->routeIs('agenda.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                                       :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                                       title="Agenda"
+                                    >
+                                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1"
+                                              :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                        >Agenda</span>
+                                        <svg x-show="sidebarOpen" x-cloak class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="subOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </a>
+                                </div>
+                                <div x-show="subOpen && sidebarOpen" x-collapse x-cloak class="ml-5 pl-3 border-l-2 border-blue-100 mt-0.5 space-y-0.5">
+                                    <a href="{{ route('agenda.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('agenda.index') && !request()->has('view') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        <span class="whitespace-nowrap">Vista de Agenda</span>
+                                    </a>
+                                    <a href="{{ route('agenda.pending.list') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('agenda.pending.list') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        <span class="whitespace-nowrap">Solicitudes Pendientes</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- ══════ HORARIOS ══════ --}}
+                            <div x-data="{ subOpen: {{ request()->routeIs('horarios.*') || request()->routeIs('grupos_horarios.*') ? 'true' : 'false' }} }">
+                                <div class="flex items-center">
+                                    <a :href="sidebarOpen ? '#' : '{{ route('horarios.index') }}'"
+                                       @click="if(sidebarOpen) { $event.preventDefault(); subOpen = !subOpen; }"
+                                       class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 flex-1 min-w-0 {{ request()->routeIs('horarios.*') || request()->routeIs('grupos_horarios.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                                       :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                                       title="Horarios"
+                                    >
+                                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1"
+                                              :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                        >Horarios</span>
+                                        <svg x-show="sidebarOpen" x-cloak class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="subOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </a>
+                                </div>
+                                <div x-show="subOpen && sidebarOpen" x-collapse x-cloak class="ml-5 pl-3 border-l-2 border-blue-100 mt-0.5 space-y-0.5">
+                                    <a href="{{ route('horarios.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('horarios.index') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                                        <span class="whitespace-nowrap">Bloques de Horario</span>
+                                    </a>
+                                    <a href="{{ route('horarios.create') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('horarios.create') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <span class="whitespace-nowrap">Crear Bloque</span>
+                                    </a>
+                                    <a href="{{ route('grupos_horarios.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('grupos_horarios.*') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                                        <span class="whitespace-nowrap">Grupos de Horarios</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- ══════ HISTORIAS CLÍNICAS ══════ --}}
+                            <div x-data="{ subOpen: {{ request()->routeIs('historias.*') ? 'true' : 'false' }} }">
+                                <div class="flex items-center">
+                                    <a :href="sidebarOpen ? '#' : '{{ route('historias.index') }}'"
+                                       @click="if(sidebarOpen) { $event.preventDefault(); subOpen = !subOpen; }"
+                                       class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 flex-1 min-w-0 {{ request()->routeIs('historias.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                                       :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                                       title="Historias Clínicas"
+                                    >
+                                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 2H15a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V4a2 2 0 0 1 2-2z" />
+                                            <path d="M9 7h6" /><path d="M9 11h6" /><path d="M9 15h6" />
+                                        </svg>
+                                        <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1"
+                                              :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                        >Historias Clínicas</span>
+                                        <svg x-show="sidebarOpen" x-cloak class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="subOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </a>
+                                </div>
+                                <div x-show="subOpen && sidebarOpen" x-collapse x-cloak class="ml-5 pl-3 border-l-2 border-blue-100 mt-0.5 space-y-0.5">
+                                    <a href="{{ route('historias.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('historias.index') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        <span class="whitespace-nowrap">Buscar Paciente</span>
+                                    </a>
+                                    <a href="{{ route('plantillas.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('plantillas.*') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                                        <span class="whitespace-nowrap">Secciones del Historial</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- ══════ ENFERMEDADES ══════ --}}
+                            <div x-data="{ subOpen: {{ request()->routeIs('enfermedades.*') ? 'true' : 'false' }} }">
+                                <div class="flex items-center">
+                                    <a :href="sidebarOpen ? '#' : '{{ route('enfermedades.index') }}'"
+                                       @click="if(sidebarOpen) { $event.preventDefault(); subOpen = !subOpen; }"
+                                       class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 flex-1 min-w-0 {{ request()->routeIs('enfermedades.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                                       :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                                       title="Enfermedades"
+                                    >
+                                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1"
+                                              :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                        >Enfermedades</span>
+                                        <svg x-show="sidebarOpen" x-cloak class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="subOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </a>
+                                </div>
+                                <div x-show="subOpen && sidebarOpen" x-collapse x-cloak class="ml-5 pl-3 border-l-2 border-blue-100 mt-0.5 space-y-0.5">
+                                    <a href="{{ route('enfermedades.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('enfermedades.index') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                        <span class="whitespace-nowrap">Ver Catálogo</span>
+                                    </a>
+                                    <a href="{{ route('enfermedades.create') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('enfermedades.create') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <span class="whitespace-nowrap">Registrar Enfermedad</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                        @elseif(auth()->user()->role === 'admin')
+                            {{-- ══════ USUARIOS ══════ --}}
+                            <div x-data="{ subOpen: {{ request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                                <div class="flex items-center">
+                                    <a :href="sidebarOpen ? '#' : '{{ route('admin.users.index') }}'"
+                                       @click="if(sidebarOpen) { $event.preventDefault(); subOpen = !subOpen; }"
+                                       class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 flex-1 min-w-0 {{ request()->routeIs('admin.users.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                                       :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                                       title="Usuarios"
+                                    >
+                                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                        </svg>
+                                        <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1"
+                                              :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                        >Usuarios</span>
+                                        <svg x-show="sidebarOpen" x-cloak class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="subOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </a>
+                                </div>
+                                <div x-show="subOpen && sidebarOpen" x-collapse x-cloak class="ml-5 pl-3 border-l-2 border-blue-100 mt-0.5 space-y-0.5">
+                                    <a href="{{ route('admin.users.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('admin.users.index') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                        <span class="whitespace-nowrap">Lista de Usuarios</span>
+                                    </a>
+                                    <a href="{{ route('admin.users.create') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('admin.users.create') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <span class="whitespace-nowrap">Crear Usuario</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- ══════ CITAS GLOBALES ══════ --}}
+                            <a href="{{ route('citas.index') }}" 
+                               class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 {{ request()->routeIs('citas.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                               :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                               title="Citas Globales"
+                            >
+                                <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300"
+                                      :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                >Citas Globales</span>
+                            </a>
+
+                        @elseif(auth()->user()->role === 'paciente')
+                            {{-- ══════ MIS CITAS ══════ --}}
+                            <div x-data="{ subOpen: {{ request()->routeIs('citas.*') ? 'true' : 'false' }} }">
+                                <div class="flex items-center">
+                                    <a :href="sidebarOpen ? '#' : '{{ route('citas.index') }}'"
+                                       @click="if(sidebarOpen) { $event.preventDefault(); subOpen = !subOpen; }"
+                                       class="group flex items-center gap-3 h-11 rounded-xl transition-all duration-200 flex-1 min-w-0 {{ request()->routeIs('citas.*') ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                                       :class="sidebarOpen ? 'px-3' : 'justify-center px-0'"
+                                       title="Mis Citas"
+                                    >
+                                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1"
+                                              :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                        >Mis Citas</span>
+                                        <svg x-show="sidebarOpen" x-cloak class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="subOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </a>
+                                </div>
+                                <div x-show="subOpen && sidebarOpen" x-collapse x-cloak class="ml-5 pl-3 border-l-2 border-blue-100 mt-0.5 space-y-0.5">
+                                    <a href="{{ route('citas.index') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('citas.index') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                        <span class="whitespace-nowrap">Mis Citas Activas</span>
+                                    </a>
+                                    <a href="{{ route('citas.create') }}" class="flex items-center gap-2 h-8 px-2 rounded-lg text-xs font-medium transition-all duration-150 {{ request()->routeIs('citas.create') ? 'text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50/60' }}">
+                                        <svg class="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <span class="whitespace-nowrap">Solicitar Cita</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
+                    </nav>
+
+                    {{-- Bottom section: Mensajería --}}
+                    @if(auth()->user()->role !== 'admin')
+                        <div class="mt-auto px-2 pt-3 border-t border-gray-100 mx-2">
                             <button 
                                 type="button"
                                 @click="isChatOpen = !isChatOpen" 
-                                title="Mensajes" 
-                                class="inline-flex items-center justify-center h-12 w-12 rounded-2xl transition relative"
-                                :class="isChatOpen ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-blue-50'"
+                                class="group flex items-center gap-3 h-11 w-full rounded-xl transition-all duration-200 relative"
+                                :class="[
+                                    isChatOpen ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600',
+                                    sidebarOpen ? 'px-3' : 'justify-center px-0'
+                                ]"
+                                title="Mensajes"
                             >
-                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                 </svg>
+                                <span class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300"
+                                      :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
+                                >Mensajes</span>
                                 @php $unreadMsgs = \App\Models\User::contarMensajesNoLeidos(auth()->id()); @endphp
                                 @if($unreadMsgs > 0)
-                                    <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-0.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white shadow">
+                                    <span class="absolute -top-0.5 min-w-[18px] h-[18px] px-0.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white shadow"
+                                          :class="sidebarOpen ? 'right-2' : '-right-0.5'"
+                                    >
                                         {{ $unreadMsgs > 99 ? '99+' : $unreadMsgs }}
                                     </span>
                                 @endif
                             </button>
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                 </aside>
 
 

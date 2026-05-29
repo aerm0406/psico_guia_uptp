@@ -4,7 +4,7 @@
             
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                 <div>
-                    <h2 class="text-3xl font-black text-slate-900 tracking-tight">Plantillas de Secciones</h2>
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight">Secciones del Historial Clínico</h2>
                     <p class="text-sm font-bold text-slate-500 mt-2 uppercase tracking-widest">Gestiona las estructuras predefinidas para los expedientes clínicos de tus pacientes</p>
                 </div>
                 <div>
