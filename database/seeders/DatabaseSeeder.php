@@ -15,13 +15,13 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // User factory fue removido porque el modelo no usa Eloquent
 
         $this->call([
+            AdminSeeder::class,
             GrupoHorarioSeeder::class,
+            AvanceSesionSeeder::class,
+            NotaEvolucionSeeder::class,
         ]);
     }
 }

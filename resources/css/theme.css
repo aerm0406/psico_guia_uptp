@@ -1,0 +1,88 @@
+/* ============================================
+   TEMA CLARO (default)
+   ============================================ */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --border-primary: #e5e7eb;
+    --card-bg: #ffffff;
+    --header-bg: #ffffff;
+    --sidebar-bg: #ffffff;
+    --hover-bg: #f3f4f6;
+}
+
+/* ============================================
+   TEMA OSCURO
+   ============================================ */
+[data-theme="dark"] {
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --text-primary: #f9fafb;
+    --text-secondary: #e5e7eb;
+    --border-primary: #374151;
+    --card-bg: #1f2937;
+    --header-bg: #1f2937;
+    --sidebar-bg: #1f2937;
+    --hover-bg: #374151;
+}
+
+/* ============================================
+   APLICACIÓN DIRECTA
+   ============================================ */
+html, body {
+    background-color: var(--bg-primary) !important;
+}
+
+body {
+    color: var(--text-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Navbar */
+nav, header {
+    background-color: var(--header-bg) !important;
+    border-bottom-color: var(--border-primary) !important;
+}
+
+/* Sidebar */
+aside, .sidebar {
+    background-color: var(--sidebar-bg) !important;
+    border-right-color: var(--border-primary) !important;
+}
+
+/* Cards y contenedores */
+.bg-white, .card, [class*="bg-white"] {
+    background-color: var(--card-bg) !important;
+}
+
+/* Textos */
+.text-gray-900, .text-gray-800, .text-gray-700 {
+    color: var(--text-primary) !important;
+}
+
+.text-gray-600, .text-gray-500, .text-gray-400 {
+    color: var(--text-secondary) !important;
+}
+
+/* Bordes */
+.border-gray-100, .border-gray-200, .border-gray-300 {
+    border-color: var(--border-primary) !important;
+}
+
+/* Botones y fondos secundarios */
+.bg-gray-50, .bg-gray-100 {
+    background-color: var(--bg-secondary) !important;
+}
+
+.hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+/* Transiciones suaves */
+* {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}

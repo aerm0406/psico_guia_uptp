@@ -62,6 +62,10 @@
                     <a href="{{ route('login') }}" class="text-xs font-bold text-slate-400 hover:text-sky-600 transition-colors">
                         <span class="text-sky-500 underline decoration-sky-200 underline-offset-4">Regresar al inicio de sesión</span>
                     </a>
+                    
+                    <a href="{{ route('password.request') }}" class="text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-colors mt-2 block">
+                        Recuperar por cédula de identidad
+                    </a>
                 </div>
             </form>
 

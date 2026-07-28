@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class CitaConfirmedNotification extends Notification
+class CitaConfirmedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -20,7 +20,13 @@ class CitaConfirmedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable)
+    {
+        return (new \App\Mail\CitaConfirmada($this->cita))
+                    ->to($notifiable->email);
     }
 
     public function toArray(object $notifiable): array

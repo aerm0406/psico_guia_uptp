@@ -30,6 +30,14 @@ class CheckProfileComplete
     {
         $user = Auth::user();
 
+        // Validar si el usuario fue inhabilitado o eliminado lógicamente (estatus 0)
+        if ($user && $user->status == 0) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('status', 'Su cuenta ha sido deshabilitada o rechazada por la administración.');
+        }
+
         // Solo aplica a pacientes o psicólogos autenticados con perfil incompleto
         if (
             $user &&

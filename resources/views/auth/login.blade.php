@@ -29,43 +29,84 @@
         }
 
         .side-panel {
-            background-color: #f0f9ff; /* sky-50 */
+            background-color: #f0f9ff;
             background-image: radial-gradient(circle at 2px 2px, rgba(14, 165, 233, 0.05) 1px, transparent 0);
             background-size: 24px 24px;
         }
+
+        :root[data-theme="dark"] .side-panel,
+        .dark .side-panel {
+            background-color: #0f172a !important;
+            background-image: radial-gradient(circle at 2px 2px, rgba(14, 165, 233, 0.1) 1px, transparent 0) !important;
+        }
+
+        :root[data-theme="dark"] .login-input,
+        .dark .login-input {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+
+        :root[data-theme="dark"] .login-input:focus,
+        .dark .login-input:focus {
+            background-color: #0f172a !important;
+            border-color: #38bdf8 !important;
+        }
+
+        :root[data-theme="dark"] .dark\:text-white,
+        .dark .dark\:text-white { color: #ffffff !important; }
+
+        :root[data-theme="dark"] .dark\:bg-gray-900,
+        .dark .dark\:bg-gray-900 { background-color: #111827 !important; }
+
+        :root[data-theme="dark"] .dark\:border-gray-800,
+        .dark .dark\:border-gray-800 { border-color: #1f2937 !important; }
+
+        :root[data-theme="dark"] .dark\:border-gray-700,
+        .dark .dark\:border-gray-700 { border-color: #374151 !important; }
+
+        :root[data-theme="dark"] .dark\:text-gray-300,
+        .dark .dark\:text-gray-300 { color: #d1d5db !important; }
+
+        :root[data-theme="dark"] .dark\:hidden,
+        .dark .dark\:hidden { display: none !important; }
+        
+        :root[data-theme="dark"] .dark\:block,
+        .dark .dark\:block { display: block !important; }
+
     </style>
 
-    <div class="min-h-screen flex font-inter antialiased bg-white">
+    <div class="min-h-screen flex font-inter antialiased bg-white dark:bg-gray-900">
         <!-- Left Side: Professional Branding -->
-        <div class="hidden lg:flex lg:w-1/2 side-panel relative overflow-hidden items-start justify-center pt-18 p-12 border-r border-sky-100">
+        <div class="hidden lg:flex lg:w-1/2 lg:sticky lg:top-0 lg:h-screen side-panel relative overflow-hidden items-start justify-center pt-18 p-12 border-r border-sky-100 dark:border-gray-800">
             <div class="relative z-10 w-full max-w-lg">
                 <div class="mb-12">
-                    <div class="inline-flex p-4 bg-white rounded-2xl border border-sky-200 mb-8 shadow-sm">
-                        <img src="{{ asset('img/LOGO-DE-PSICOLOGIA-GRISOSCURO.png') }}" alt="Logo" class="w-12 h-12" />
+                    <div class="inline-flex p-4 bg-white dark:bg-gray-900 rounded-2xl border border-sky-200 dark:border-gray-700 mb-8 shadow-sm">
+                        <img src="{{ asset('img/LOGO-DE-PSICOLOGIA-GRISOSCURO.png') }}" alt="Logo" class="w-12 h-12 dark:hidden" /><img src="{{ asset('img/LOGO-DE-PSICOLOGIA-BLANCO.png') }}" alt="Logo" class="w-12 h-12 hidden dark:block" />
                     </div>
-                    <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-6">Psico-Guía</h1>
-                    <div class="h-1.5 w-20 bg-sky-500 rounded-full mb-8"></div>
-                    <p class="text-xl text-slate-600 leading-relaxed font-medium">
+                    <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-6">Psico-Guía</h1>
+                    <div class="h-1.5 w-20 bg-sky-50 dark:bg-sky-900/200 rounded-full mb-8"></div>
+                    <p class="text-xl text-slate-600 dark:text-gray-300 leading-relaxed font-medium">
                         Plataforma profesional para la gestión de atención psicológica y seguimiento clínico institucional.
                     </p>
                 </div>
 
                 <div class="space-y-6">
                     <div class="flex items-start gap-4">
-                        <div class="mt-1 flex-shrink-0 w-8 h-8 rounded-xl bg-white flex items-center justify-center border border-sky-200 shadow-sm">
+                        <div class="mt-1 flex-shrink-0 w-8 h-8 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center border border-sky-200 dark:border-gray-700 shadow-sm">
                             <svg class="w-4 h-4 text-sky-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
                         </div>
                         <div>
-                            <h3 class="text-slate-900 font-bold text-sm">Seguridad de Datos</h3>
+                            <h3 class="text-slate-900 dark:text-white font-bold text-sm">Seguridad de Datos</h3>
                             <p class="text-slate-500 text-xs">Encriptación de grado clínico para toda la información sensible.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-4">
-                        <div class="mt-1 flex-shrink-0 w-8 h-8 rounded-xl bg-white flex items-center justify-center border border-sky-200 shadow-sm">
+                        <div class="mt-1 flex-shrink-0 w-8 h-8 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center border border-sky-200 dark:border-gray-700 shadow-sm">
                             <svg class="w-4 h-4 text-sky-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
                         </div>
                         <div>
-                            <h3 class="text-slate-900 font-bold text-sm">Gestión Eficiente</h3>
+                            <h3 class="text-slate-900 dark:text-white font-bold text-sm">Gestión Eficiente</h3>
                             <p class="text-slate-500 text-xs">Optimización de agenda y recursos de atención psicológica.</p>
                         </div>
                     </div>
@@ -74,11 +115,11 @@
         </div>
 
         <!-- Right Side: Clean Login Form -->
-        <div class="w-full lg:w-1/2 flex flex-col items-center justify-start pt-32 p-8 lg:p-24 bg-white">
+        <div class="w-full lg:w-1/2 flex flex-col items-center justify-start pt-32 p-8 lg:p-24 bg-white dark:bg-gray-900">
             <div class="w-full max-w-md">
                 <!-- Header -->
                 <div class="mb-10 text-center lg:text-left">
-                    <h2 class="text-4xl font-black text-slate-900 tracking-tight">Acceso al Sistema</h2>
+                    <h2 class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Acceso al Sistema</h2>
                     <p class="text-slate-500 mt-3 font-medium">Por favor, ingrese sus credenciales autorizadas.</p>
                 </div>
 
@@ -112,7 +153,7 @@
                     <div class="flex items-center justify-between px-1 pt-4">
                         <label class="flex items-center cursor-pointer group">
                             <input id="remember_me" type="checkbox" name="remember" class="w-4 h-4 text-sky-500 border-slate-300 rounded focus:ring-sky-500">
-                            <span class="ml-2 text-xs font-bold text-slate-400 group-hover:text-slate-600 transition-colors">Guardar sesión</span>
+                            <span class="ml-2 text-xs font-bold text-slate-400 group-hover:text-slate-600 dark:text-gray-300 transition-colors">Guardar sesión</span>
                         </label>
                         @if (Route::has('password.request'))
                             <a href="{{ route('password.request') }}" class="text-xs font-bold text-slate-400 hover:text-sky-600 transition-colors">¿Olvidaste tu contraseña?</a>
@@ -134,3 +175,4 @@
         </div>
     </div>
 </x-guest-layout>
+

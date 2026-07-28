@@ -30,25 +30,15 @@ class PasswordResetLinkController extends Controller
         ]);
 
         $email = $request->email;
-        $user = \Illuminate\Support\Facades\DB::table('users')
-            ->where('email', $email)
-            ->where('status', 1)
-            ->first();
+        $user = \App\Models\User::obtenerUsuarioPorEmail($email);
 
         if (!$user) {
-            return back()->withErrors(['email' => __('passwords.user')]);
+            return back()->withErrors(['email' => 'No podemos encontrar un usuario con ese correo electrónico.']);
         }
 
         $token = \Illuminate\Support\Str::random(60);
 
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $email],
-            [
-                'email' => $email,
-                'token' => \Illuminate\Support\Facades\Hash::make($token),
-                'created_at' => now()
-            ]
-        );
+        \App\Models\User::crearTokenRecuperacion($email, $token);
 
         $resetUrl = url(route('password.reset', [
             'token' => $token,
@@ -60,6 +50,6 @@ class PasswordResetLinkController extends Controller
             $message->subject('Restablecer contraseña');
         });
 
-        return back()->with('status', __('passwords.sent'));
+        return back()->with('status', 'Le hemos enviado por correo el enlace para restablecer su contraseña.');
     }
 }

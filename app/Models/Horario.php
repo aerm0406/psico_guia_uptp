@@ -180,7 +180,7 @@ class Horario
         return DB::table('horarios')
             ->where('grupo_horario_id', $grupoId)
             ->whereIn('activo', [self::STATUS_ACTIVE, self::STATUS_INACTIVE])
-            ->orderByRaw("FIELD(dia, 'Lunes','Martes','Miércoles','Jueves','Viernes')")
+            ->orderByRaw("CASE dia WHEN 'Lunes' THEN 1 WHEN 'Martes' THEN 2 WHEN 'Miércoles' THEN 3 WHEN 'Jueves' THEN 4 WHEN 'Viernes' THEN 5 ELSE 6 END")
             ->orderBy('hora_inicio')
             ->get();
     }
@@ -207,7 +207,7 @@ class Horario
             $query->where('dia', $filtroDia);
         }
 
-        return $query->orderByRaw("FIELD(dia, 'Lunes','Martes','Miércoles','Jueves','Viernes')")
+        return $query->orderByRaw("CASE dia WHEN 'Lunes' THEN 1 WHEN 'Martes' THEN 2 WHEN 'Miércoles' THEN 3 WHEN 'Jueves' THEN 4 WHEN 'Viernes' THEN 5 ELSE 6 END")
             ->orderBy('hora_inicio')
             ->get();
     }

@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class PenalizacionPacienteNotification extends Notification
+class PenalizacionPacienteNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -25,7 +25,7 @@ class PenalizacionPacienteNotification extends Notification
     {
         return [
             'type_id' => 'penalizacion_paciente',
-            'body' => 'Usted ha incumplido con las normas de atención. Por lo tanto, ahora su prioridad de atención será baja.',
+            'body' => 'Usted ha incumplido con las normas de atención. Por lo tanto, ahora su prioridad de atención pasará a ser baja.',
             'url' => route('citas.index'),
         ];
     }

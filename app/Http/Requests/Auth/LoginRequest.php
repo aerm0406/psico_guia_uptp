@@ -52,7 +52,14 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => 'Estas credenciales no coinciden con nuestros registros.',
+            ]);
+        }
+
+        if ($user->role === 'psicologo' && $user->aprobado == 0) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'Su cuenta aún está en proceso de revisión por parte de la administración. Se le notificará cuando sea aprobada.',
             ]);
         }
 
@@ -77,10 +84,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'email' => 'Demasiados intentos de acceso. Por favor intente nuevamente en ' . ceil($seconds / 60) . ' minutos.',
         ]);
     }
 

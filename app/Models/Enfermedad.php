@@ -113,4 +113,19 @@ class Enfermedad
     {
         return DB::table('enfermedades')->where('tipo', self::TIPO_FISICA);
     }
+
+    public static function obtenerTodasActivas()
+    {
+        return DB::table('enfermedades')
+            ->where('estatus', 1)
+            ->orderBy('nombre')
+            ->get();
+    }
+
+    public static function obtenerNombrePorId($id)
+    {
+        return DB::table('enfermedades')
+            ->where('id', $id)
+            ->value('nombre');
+    }
 }

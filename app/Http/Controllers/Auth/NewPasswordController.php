@@ -31,7 +31,25 @@ class NewPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'max:16', 
+                'confirmed',
+                'regex:/[a-z]/', 
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[@$!%*?&]/'
+            ],
+        ], [
+            'email.required' => 'El correo es obligatorio.',
+            'email.email' => 'El formato del correo es inválido.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.max' => 'La contraseña no puede tener más de 16 caracteres.',
+            'password.confirmed' => 'La confirmación de la contraseña no coincide.',
+            'password.regex' => 'La contraseña debe contener al menos una letra mayúscula, una minúscula, un número y un símbolo especial (@$!%*?&).',
         ]);
 
         $email = $request->email;
@@ -43,7 +61,7 @@ class NewPasswordController extends Controller
 
         if (!$record || !\Illuminate\Support\Facades\Hash::check($token, $record->token)) {
             return back()->withInput($request->only('email'))
-                ->withErrors(['email' => __('passwords.token')]);
+                ->withErrors(['email' => 'Este token de restablecimiento de contraseña es inválido.']);
         }
 
         \Illuminate\Support\Facades\DB::table('users')
@@ -58,6 +76,6 @@ class NewPasswordController extends Controller
             ->where('email', $email)
             ->delete();
 
-        return redirect()->route('login')->with('status', __('passwords.reset'));
+        return redirect()->route('login')->with('status', '¡Su contraseña ha sido restablecida exitosamente!');
     }
 }

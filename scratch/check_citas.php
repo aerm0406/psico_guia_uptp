@@ -1,0 +1,1 @@
+<?php \ = file('C:\Users\admin\.gemini\antigravity-ide\brain\6b653e6e-e01c-433b-89e2-33601df447a1\.system_generated\logs\transcript_full.jsonl'); foreach(\ as \) { if(strpos(\, 'index.blade.php') !== false && strpos(\, 'multi_replace') !== false) { file_put_contents('scratch/index_changes.jsonl', \, FILE_APPEND); } }

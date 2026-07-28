@@ -67,92 +67,43 @@ class HistoriaClinica
                 ->count();
 
             if ($seccionesActivas === 0) {
-                // 1. Diagnóstico
-                $diagId = DB::table('historia_secciones_personalizadas')->insertGetId([
-                    'historia_clinica_id' => $historia->id,
-                    'titulo' => 'Diagnóstico',
-                    'descripcion_general' => 'Diagnóstico y Plan de Tratamiento',
-                    'orden' => 1,
-                    'status' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                DB::table('historia_segmentos_personalizados')->insert([
-                    [
-                        'seccion_id' => $diagId,
-                        'titulo' => 'Diagnóstico Inicial (Resumen)',
-                        'contenido' => null,
-                        'orden' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ],
-                    [
-                        'seccion_id' => $diagId,
-                        'titulo' => 'Plan de Tratamiento',
-                        'contenido' => null,
-                        'orden' => 2,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]
-                ]);
+                // Obtener la última plantilla global del psicólogo usando Query Builder
+                $plantillaGlobal = DB::table('historia_plantillas_globales')
+                    ->where('psicologo_id', $psicologoId)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
 
-                // 2. Antecedentes Personales
-                $persId = DB::table('historia_secciones_personalizadas')->insertGetId([
-                    'historia_clinica_id' => $historia->id,
-                    'titulo' => 'Antecedentes Personales',
-                    'descripcion_general' => 'Salud e historial del paciente',
-                    'orden' => 2,
-                    'status' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                DB::table('historia_segmentos_personalizados')->insert([
-                    [
-                        'seccion_id' => $persId,
-                        'titulo' => 'Salud Mental / Psiquiátrico',
-                        'contenido' => null,
-                        'orden' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ],
-                    [
-                        'seccion_id' => $persId,
-                        'titulo' => 'Salud General',
-                        'contenido' => null,
-                        'orden' => 2,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]
-                ]);
+                if ($plantillaGlobal) {
+                    $secciones = json_decode($plantillaGlobal->secciones, true) ?? [];
+                    $maxOrden = 0;
 
-                // 3. Antecedentes Familiares
-                $famId = DB::table('historia_secciones_personalizadas')->insertGetId([
-                    'historia_clinica_id' => $historia->id,
-                    'titulo' => 'Antecedentes Familiares',
-                    'descripcion_general' => 'Historial hereditario y dinámicas',
-                    'orden' => 3,
-                    'status' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                DB::table('historia_segmentos_personalizados')->insert([
-                    [
-                        'seccion_id' => $famId,
-                        'titulo' => 'Salud Mental',
-                        'contenido' => null,
-                        'orden' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ],
-                    [
-                        'seccion_id' => $famId,
-                        'titulo' => 'Salud General',
-                        'contenido' => null,
-                        'orden' => 2,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]
-                ]);
+                    foreach ($secciones as $seccionData) {
+                        $maxOrden++;
+                        $seccionId = DB::table('historia_secciones_personalizadas')->insertGetId([
+                            'historia_clinica_id' => $historia->id,
+                            'titulo' => $seccionData['titulo'],
+                            'descripcion_general' => $seccionData['descripcion_general'] ?? null,
+                            'orden' => $maxOrden,
+                            'status' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        $segmentos = $seccionData['segmentos'] ?? [];
+                        foreach ($segmentos as $indexSeg => $segmentoTitulo) {
+                            if (!empty(trim($segmentoTitulo))) {
+                                DB::table('historia_segmentos_personalizados')->insert([
+                                    'seccion_id' => $seccionId,
+                                    'titulo' => $segmentoTitulo,
+                                    'contenido' => null,
+                                    'orden' => $indexSeg + 1,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
+                        }
+                    }
+                }
             }
 
             DB::commit();
@@ -184,14 +135,100 @@ class HistoriaClinica
     /**
      * Obtiene el listado de pacientes atendidos por un psicólogo.
      */
-    public static function obtenerListado($psicologoId)
+    public static function obtenerListado($psicologoId, $search = null, $filters = [])
     {
-        $historiasBase = \Illuminate\Support\Facades\DB::table('citas')
+        $query = \Illuminate\Support\Facades\DB::table('citas')
             ->join('users', 'citas.user_id', '=', 'users.id')
             ->leftJoin('historia_clinicas', 'users.id', '=', 'historia_clinicas.user_id')
             ->where('citas.psicologo_id', $psicologoId)
-            ->where('citas.estado', 'realizada')
-            ->select(
+            ->where('citas.estado', 'realizada');
+
+        if (!empty($search)) {
+            $query->leftJoin('historia_enfermedad', 'historia_clinicas.id', '=', 'historia_enfermedad.historia_clinica_id')
+                  ->leftJoin('enfermedades', 'historia_enfermedad.enfermedad_id', '=', 'enfermedades.id')
+                  ->where(function($q) use ($search) {
+                      $q->where('users.nombres', 'like', "%{$search}%")
+                        ->orWhere('users.apellidos', 'like', "%{$search}%")
+                        ->orWhere('users.cedula', 'like', "%{$search}%");
+                  });
+        }
+
+        if (!empty($filters['pnf'])) {
+            $query->where('users.pnf', $filters['pnf']);
+        }
+
+        if (!empty($filters['edad'])) {
+            $birthDate = \Carbon\Carbon::now()->subYears($filters['edad'])->format('Y-m-d');
+            // Assuming we match the exact year:
+            $query->whereYear('users.fecha_nacimiento', \Carbon\Carbon::now()->subYears($filters['edad'])->year);
+        }
+
+        // Filtrado por fecha según el tipo seleccionado
+        $tipoFiltroFecha = $filters['tipo_filtro_fecha'] ?? 'rango';
+        $fechaDesde = $filters['fecha_desde'] ?? null;
+        $fechaHasta = $filters['fecha_hasta'] ?? null;
+
+        if (!empty($fechaDesde) || !empty($fechaHasta)) {
+            if ($tipoFiltroFecha === 'primera_cita') {
+                // Filtrar pacientes cuya PRIMERA cita realizada caiga en el rango
+                $subquery = \Illuminate\Support\Facades\DB::table('citas as sub_citas')
+                    ->select('sub_citas.user_id')
+                    ->where('sub_citas.psicologo_id', $psicologoId)
+                    ->where('sub_citas.estado', 'realizada')
+                    ->groupBy('sub_citas.user_id');
+
+                if (!empty($fechaDesde)) {
+                    $subquery->havingRaw('MIN(sub_citas.fecha) >= ?', [$fechaDesde]);
+                }
+                if (!empty($fechaHasta)) {
+                    $subquery->havingRaw('MIN(sub_citas.fecha) <= ?', [$fechaHasta]);
+                }
+
+                $pacientesIds = $subquery->pluck('user_id');
+                $query->whereIn('users.id', $pacientesIds);
+            } elseif ($tipoFiltroFecha === 'ultima_cita') {
+                // Filtrar pacientes cuya ÚLTIMA cita realizada caiga en el rango
+                $subquery = \Illuminate\Support\Facades\DB::table('citas as sub_citas')
+                    ->select('sub_citas.user_id')
+                    ->where('sub_citas.psicologo_id', $psicologoId)
+                    ->where('sub_citas.estado', 'realizada')
+                    ->groupBy('sub_citas.user_id');
+
+                if (!empty($fechaDesde)) {
+                    $subquery->havingRaw('MAX(sub_citas.fecha) >= ?', [$fechaDesde]);
+                }
+                if (!empty($fechaHasta)) {
+                    $subquery->havingRaw('MAX(sub_citas.fecha) <= ?', [$fechaHasta]);
+                }
+
+                $pacientesIds = $subquery->pluck('user_id');
+                $query->whereIn('users.id', $pacientesIds);
+            } else {
+                // Rango normal: filtra por la fecha de cualquier cita
+                if (!empty($fechaDesde)) {
+                    $query->whereDate('citas.fecha', '>=', $fechaDesde);
+                }
+                if (!empty($fechaHasta)) {
+                    $query->whereDate('citas.fecha', '<=', $fechaHasta);
+                }
+            }
+        }
+
+        if (!empty($filters['prioridad'])) {
+            $query->where('citas.prioridad', $filters['prioridad']);
+        }
+
+        if (!empty($filters['estado_animo_id'])) {
+            $query->where('citas.estado_animo_id', $filters['estado_animo_id']);
+        }
+
+        if (!empty($filters['enfermedad_id'])) {
+            $query->leftJoin('historia_enfermedad as he_filter', 'historia_clinicas.id', '=', 'he_filter.historia_clinica_id')
+                  ->where('he_filter.enfermedad_id', $filters['enfermedad_id'])
+                  ->where('he_filter.status', 1);
+        }
+
+        $historiasBase = $query->select(
                 'users.id',
                 \Illuminate\Support\Facades\DB::raw("CONCAT(users.nombres, ' ', users.apellidos) as patient_name"),
                 'users.email',
@@ -202,13 +239,36 @@ class HistoriaClinica
             ->get()
             ->unique('id');
 
+        if (!empty($filters['avance_id'])) {
+            $historiasBase = $historiasBase->filter(function($item) use ($filters) {
+                if (empty($item->notas)) return false;
+                try {
+                    $notasDecrypted = \Illuminate\Support\Facades\Crypt::decryptString($item->notas);
+                    $notasArr = json_decode($notasDecrypted, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($notasArr)) {
+                        return isset($notasArr['avance_estado']) && $notasArr['avance_estado'] == $filters['avance_id'];
+                    }
+                } catch (\Exception $e) {}
+                return false;
+            });
+        }
+
         return $historiasBase->map(function ($item) use ($psicologoId) {
             $h = self::obtenerPorPaciente($item->id);
-            $countCitas = \Illuminate\Support\Facades\DB::table('citas')
+            $citasRealizadas = \Illuminate\Support\Facades\DB::table('citas')
                 ->where('user_id', $item->id)
                 ->where('psicologo_id', $psicologoId)
                 ->where('estado', 'realizada')
-                ->count();
+                ->where('status', 1)
+                ->get(['id', 'motivo']);
+
+            $countCitas = $citasRealizadas->filter(function($cita) {
+                try {
+                    return \Illuminate\Support\Facades\Crypt::decryptString($cita->motivo) !== 'Nota de Evolución (Manual)';
+                } catch (\Exception $e) {
+                    return true;
+                }
+            })->count();
 
             // Obtener el paciente y añadir propiedades compatibles con la vista (Query Builder retorna stdClass)
             $paciente = self::obtenerPaciente($item->id);
@@ -256,12 +316,31 @@ class HistoriaClinica
     {
         try {
             DB::beginTransaction();
-            // Evitar duplicados exactos
-            $existe = \Illuminate\Support\Facades\DB::table('historia_enfermedad')
-                ->where('historia_clinica_id', $historiaId)
-                ->where('enfermedad_id', $enfermedadId)
-                ->where('contexto', $contexto)
-                ->first();
+            // Evitar duplicados exactos en toda la sección
+            $existe = null;
+            if (str_starts_with($contexto, 'seg_')) {
+                $segmentoId = str_replace('seg_', '', $contexto);
+                $segmento = \Illuminate\Support\Facades\DB::table('historia_segmentos_personalizados')->where('id', $segmentoId)->first();
+                if ($segmento) {
+                    $segmentosSeccion = \Illuminate\Support\Facades\DB::table('historia_segmentos_personalizados')
+                        ->where('seccion_id', $segmento->seccion_id)
+                        ->pluck('id')
+                        ->map(fn($id) => 'seg_' . $id)
+                        ->toArray();
+
+                    $existe = \Illuminate\Support\Facades\DB::table('historia_enfermedad')
+                        ->where('historia_clinica_id', $historiaId)
+                        ->where('enfermedad_id', $enfermedadId)
+                        ->whereIn('contexto', $segmentosSeccion)
+                        ->first();
+                }
+            } else {
+                $existe = \Illuminate\Support\Facades\DB::table('historia_enfermedad')
+                    ->where('historia_clinica_id', $historiaId)
+                    ->where('enfermedad_id', $enfermedadId)
+                    ->where('contexto', $contexto)
+                    ->first();
+            }
 
             if (!$existe) {
                 $id = \Illuminate\Support\Facades\DB::table('historia_enfermedad')->insertGetId([

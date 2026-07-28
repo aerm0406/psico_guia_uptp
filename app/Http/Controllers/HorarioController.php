@@ -58,10 +58,6 @@ class HorarioController extends Controller
      */
     public function create(Request $request)
     {
-        if (Horario::hasPendingCitas(Auth::id())) {
-            return redirect()->route('horarios.index')->with('error', 'No puedes modificar bloques de horario mientras tengas citas pendientes o confirmadas.');
-        }
-
         $dias = Horario::diasSemana();
         $tieneCitasPendientes = false;
         $grupoRetorno = $request->query('grupo');
@@ -97,10 +93,6 @@ class HorarioController extends Controller
      */
     public function store(Request $request)
     {
-        if (Horario::hasPendingCitas(Auth::id())) {
-            return redirect()->route('horarios.index')->with('error', 'No puedes modificar bloques de horario mientras tengas citas pendientes o confirmadas.');
-        }
-
         // Construir hora_inicio y hora_fin a partir de los campos individuales de hora de la vista
         $horaInicio = $this->parseTimeInput(
             $request->input('hora_inicio_hora'),
@@ -256,6 +248,23 @@ class HorarioController extends Controller
         }
 
         $grupoId = $horario->grupo_horario_id;
+        if ($grupoId) {
+            $count = \Illuminate\Support\Facades\DB::table('horarios')
+                ->where('grupo_horario_id', $grupoId)
+                ->where('activo', '!=', \App\Models\Horario::STATUS_DELETED)
+                ->count();
+            if ($count <= 2) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'No puedes eliminar este bloque porque el grupo de horarios debe tener al menos dos bloques.'
+                    ], 400);
+                }
+                return redirect()->route('horarios.index', ['grupo' => $grupoId])
+                    ->with('error', 'No puedes eliminar este bloque porque el grupo de horarios debe tener al menos dos bloques.');
+            }
+        }
+
         Horario::eliminar($horario->id);
 
         if ($request->wantsJson() || $request->ajax()) {
@@ -311,9 +320,6 @@ class HorarioController extends Controller
         return redirect()->route('horarios.index')->with('success', 'Bloque de tiempo desactivado.');
     }
 
-    /**
-     * Parsea las entradas de hora individuales de la vista (hora, minuto, AM/PM) a formato de 24 horas H:i.
-     */
     private function parseTimeInput($hora, $minuto, $periodo)
     {
         if (empty($hora) || empty($minuto) || empty($periodo)) {
@@ -328,5 +334,37 @@ class HorarioController extends Controller
         }
         
         return str_pad($hora, 2, '0', STR_PAD_LEFT) . ':' . str_pad($minuto, 2, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Exporta los horarios a PDF.
+     */
+    public function exportarPdf(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        $userId = Auth::id();
+        $dias = Horario::diasSemana();
+        $grupoId = $request->get('grupo');
+
+        $grupoActivo = GrupoHorario::obtenerActivoPorPsicologo($userId);
+        $grupoSeleccionado = null;
+        if ($grupoId) {
+            $grupoSeleccionado = GrupoHorario::obtenerPorIdYUsuario($grupoId, $userId);
+        }
+        $currentGrupoId = $grupoSeleccionado ? $grupoSeleccionado->id : ($grupoActivo ? $grupoActivo->id : null);
+        
+        $horarios = Horario::obtenerPorFiltros($userId, $currentGrupoId, null);
+
+        $horariosPorDia = [];
+        foreach ($dias as $dia) {
+            $horariosPorDia[$dia] = $horarios->where('dia', $dia);
+        }
+
+        $psicologo = \App\Models\User::obtenerUsuarioPorId($userId);
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('horarios.pdf', compact('horariosPorDia', 'dias', 'psicologo'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Horario_Psicologo_' . \Illuminate\Support\Str::slug($psicologo->name) . '.pdf');
     }
 }

@@ -7,7 +7,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('chat.{conversationId}', function ($user, $conversationId) {
-    $conversation = \App\Models\Conversation::find($conversationId);
+    $conversation = \Illuminate\Support\Facades\DB::table('conversations')->where('id', $conversationId)->first();
     if (!$conversation) {
         return false;
     }

@@ -64,7 +64,11 @@
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-colors hover:bg-white hover:border-emerald-200 shadow-sm">
                 <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Compleción de Perfil</p>
                 <p class="text-slate-900 font-medium">
-                    {{ $usuario->profile_completed ? 'Completado (100%)' : 'Pendiente por completar' }}
+                    @if($usuario->role === 'psicologo' && !$usuario->aprobado)
+                        <span class="text-amber-600 font-bold">Falta de aprobación / En revisión</span>
+                    @else
+                        {{ $usuario->profile_completed ? 'Completado (100%)' : 'Pendiente por completar' }}
+                    @endif
                 </p>
             </div>
         </div>
@@ -72,6 +76,22 @@
 
     {{-- Acciones Finales --}}
     <div class="pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3">
+        @if($usuario->role === 'psicologo' && !$usuario->aprobado)
+            <form action="{{ route('admin.users.reject', $usuario->id) }}" method="POST" class="inline-block" id="form-reject-{{ $usuario->id }}">
+                @csrf
+                @method('DELETE')
+                <button type="button" onclick="AppModal.confirm('Confirmación', '¿Estás seguro de rechazar esta solicitud de registro? El usuario será inhabilitado del sistema.').then(res => { if(res) document.getElementById('form-reject-{{ $usuario->id }}').submit(); })" class="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2">
+                    Rechazar
+                </button>
+            </form>
+            <form action="{{ route('admin.users.approve', $usuario->id) }}" method="POST" class="inline-block" id="form-approve-{{ $usuario->id }}">
+                @csrf
+                @method('PATCH')
+                <button type="button" onclick="AppModal.confirm('Confirmación', '¿Estás seguro de confirmar el perfil de este psicólogo y verificar sus datos?').then(res => { if(res) document.getElementById('form-approve-{{ $usuario->id }}').submit(); })" class="w-full sm:w-auto px-8 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+                    Confirmar
+                </button>
+            </form>
+        @endif
         <button type="button" @click="show = false" class="px-8 py-3 bg-slate-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-600 hover:text-white transition-all">
             Cerrar
         </button>

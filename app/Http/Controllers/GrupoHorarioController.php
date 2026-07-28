@@ -283,6 +283,20 @@ class GrupoHorarioController extends Controller
             return redirect()->route('grupos_horarios.index')->with('error', 'No puedes cambiar o activar otro grupo de horarios mientras tengas citas pendientes o confirmadas.');
         }
 
+        $count = DB::table('horarios')
+            ->where('grupo_horario_id', $id)
+            ->where('activo', '!=', Horario::STATUS_DELETED)
+            ->count();
+        if ($count < 2) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No puedes activar un grupo con menos de dos bloques de horario.'
+                ], 400);
+            }
+            return redirect()->route('grupos_horarios.index')->with('error', 'No puedes activar un grupo con menos de dos bloques de horario.');
+        }
+
         GrupoHorario::activate($id);
 
         if ($request->ajax()) {

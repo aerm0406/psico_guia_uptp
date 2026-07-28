@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class HistoriaController extends Controller
 {
@@ -32,28 +33,155 @@ class HistoriaController extends Controller
         return response()->json($pacientes);
     }
 
-    /**
-     * Muestra el listado de pacientes con sus historiales clínicos asociados.
-     * @return \Illuminate\View\View
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $historias = HistoriaClinica::obtenerListado(Auth::id());
+        $search = $request->input('search');
+        $filters = [
+            'pnf' => $request->input('pnf'),
+            'edad' => $request->input('edad'),
+            'tipo_filtro_fecha' => $request->input('tipo_filtro_fecha', 'rango'),
+            'fecha_desde' => $request->input('fecha_desde'),
+            'fecha_hasta' => $request->input('fecha_hasta'),
+            'enfermedad_id' => $request->input('enfermedad_id'),
+            'prioridad' => $request->input('prioridad'),
+            'avance_id' => $request->input('avance_id'),
+            'estado_animo_id' => $request->input('estado_animo_id')
+        ];
+        $historias = HistoriaClinica::obtenerListado(Auth::id(), $search, $filters);
 
-        $page = request()->get('page', 1);
-        $cantidad = 6;
+        $page = $request->get('page', 1);
+        $cantidad = 9;
         
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
             $historias->slice(($page - 1) * $cantidad, $cantidad),
             $historias->count(),
             $cantidad,
             $page,
-            ['path' => request()->url(), 'query' => request()->query()]
+            ['path' => $request->url(), 'query' => $request->query()]
         );
+
+        $enfermedades = \App\Models\Enfermedad::obtenerTodasActivas();
+        $avances = \App\Models\AvanceSesion::obtenerPorPsicologo(Auth::id());
+        $estadosAnimo = \App\Models\EstadoAnimo::obtenerActivos();
+        $prioridades = \App\Models\Prioridad::obtenerParaPsicologo(Auth::id());
+        $pnfs = [
+            'Administracion' => 'Administración',
+            'Mecanica' => 'Mecánica',
+            'Mantenimiento' => 'Mantenimiento',
+            'Electricidad' => 'Electricidad',
+            'Veterinaria' => 'Veterinaria',
+            'Informatica' => 'Informática',
+            'PDA' => 'PDA',
+            'Distribucion_Logistica' => 'Distribución y Logística',
+            'Agroalimentacion' => 'Agroalimentación',
+            'Seguridad_Alimentaria_Nutricional' => 'Seguridad alimentaria y Cultura Nutricional'
+        ];
+
+        // Get the selected enfermedad name if available
+        $enfermedadSeleccionada = null;
+        if (!empty($filters['enfermedad_id'])) {
+            $enfermedadSeleccionada = \App\Models\Enfermedad::obtenerPorId($filters['enfermedad_id']);
+        }
 
         return view('historias.index', [
             'historias' => $paginator,
+            'search' => $search,
+            'filters' => $filters,
+            'enfermedadSeleccionada' => $enfermedadSeleccionada,
+            'enfermedades' => $enfermedades,
+            'avances' => $avances,
+            'estadosAnimo' => $estadosAnimo,
+            'prioridades' => $prioridades,
+            'pnfs' => $pnfs
         ]);
+    }
+
+    /**
+     * Exportar el listado a PDF
+     */
+    public function exportarPdf(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        $search = $request->input('search');
+        $filters = [
+            'pnf' => $request->input('pnf'),
+            'edad' => $request->input('edad'),
+            'tipo_filtro_fecha' => $request->input('tipo_filtro_fecha', 'rango'),
+            'fecha_desde' => $request->input('fecha_desde'),
+            'fecha_hasta' => $request->input('fecha_hasta'),
+            'enfermedad_id' => $request->input('enfermedad_id'),
+            'prioridad' => $request->input('prioridad'),
+            'avance_id' => $request->input('avance_id'),
+            'estado_animo_id' => $request->input('estado_animo_id')
+        ];
+        $historias = HistoriaClinica::obtenerListado(Auth::id(), $search, $filters);
+
+        $filterNames = [
+            'pnf' => $filters['pnf'],
+            'edad' => $filters['edad'],
+            'fecha_desde' => $filters['fecha_desde'],
+            'fecha_hasta' => $filters['fecha_hasta'],
+            'prioridad' => $filters['prioridad'],
+            'enfermedad' => null,
+            'avance' => null,
+            'estado_animo' => null,
+        ];
+
+        if (!empty($filters['enfermedad_id'])) {
+            $filterNames['enfermedad'] = \App\Models\Enfermedad::obtenerNombrePorId($filters['enfermedad_id']);
+        }
+        if (!empty($filters['avance_id'])) {
+            $filterNames['avance'] = \App\Models\AvanceSesion::obtenerNombrePorId($filters['avance_id']);
+        }
+        if (!empty($filters['estado_animo_id'])) {
+            $filterNames['estado_animo'] = \App\Models\EstadoAnimo::obtenerNombrePorId($filters['estado_animo_id']);
+        }
+
+        $pdf = PDF::loadView('historias.listadoPDF', compact('historias', 'search', 'filterNames'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Listado_Pacientes_' . date('Y_m_d') . '.pdf');
+    }
+
+    /**
+     * Exportar el listado a Excel
+     */
+    public function exportarExcel(Request $request)
+    {
+        $search = $request->input('search');
+        $filters = [
+            'pnf' => $request->input('pnf'),
+            'edad' => $request->input('edad'),
+            'tipo_filtro_fecha' => $request->input('tipo_filtro_fecha', 'rango'),
+            'fecha_desde' => $request->input('fecha_desde'),
+            'fecha_hasta' => $request->input('fecha_hasta'),
+            'enfermedad_id' => $request->input('enfermedad_id'),
+            'prioridad' => $request->input('prioridad'),
+            'avance_id' => $request->input('avance_id'),
+            'estado_animo_id' => $request->input('estado_animo_id')
+        ];
+        $filterNames = [
+            'pnf' => $filters['pnf'],
+            'edad' => $filters['edad'],
+            'fecha_desde' => $filters['fecha_desde'],
+            'fecha_hasta' => $filters['fecha_hasta'],
+            'prioridad' => $filters['prioridad'],
+            'enfermedad' => null,
+            'avance' => null,
+            'estado_animo' => null,
+        ];
+
+        if (!empty($filters['enfermedad_id'])) {
+            $filterNames['enfermedad'] = \App\Models\Enfermedad::obtenerNombrePorId($filters['enfermedad_id']);
+        }
+        if (!empty($filters['avance_id'])) {
+            $filterNames['avance'] = \App\Models\AvanceSesion::obtenerNombrePorId($filters['avance_id']);
+        }
+        if (!empty($filters['estado_animo_id'])) {
+            $filterNames['estado_animo'] = \App\Models\EstadoAnimo::obtenerNombrePorId($filters['estado_animo_id']);
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\Historias\PacientesExport(Auth::id(), $search, $filters, $filterNames), 'Listado_Pacientes_' . date('Y_m_d') . '.xlsx');
     }
 
     /**
@@ -73,6 +201,36 @@ class HistoriaController extends Controller
         // Usamos el nuevo método del modelo para un inicio limpio (MVD)
         $historia = HistoriaClinica::iniciarHistoria($paciente->id, Auth::id());
  
+        // Limpieza automática de notas manuales vacías
+        $citasRaw = \App\Models\Cita::obtenerCitasPsicologoPacienteRaw($paciente->id, Auth::id());
+        foreach ($citasRaw as $c) {
+            $cDecrypted = Cita::obtenerDetalle($c->id);
+            if ($cDecrypted && $cDecrypted->motivo === 'Nota de Evolución (Manual)') {
+                $isEmpty = true;
+                if ($cDecrypted->notas) {
+                    $data = json_decode($cDecrypted->notas, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+                        $hasContent = false;
+                        $fieldsToCheck = ['motivo_consulta', 'observaciones', 'intervenciones', 'plan_tratamiento', 'proxima_cita_razon', 'titulo_manual', 'estado_animo_id', 'avance_estado', 'diagnosticos'];
+                        foreach ($fieldsToCheck as $field) {
+                            if (!empty($data[$field])) {
+                                $hasContent = true;
+                                break;
+                            }
+                        }
+                        if ($hasContent) {
+                            $isEmpty = false;
+                        }
+                    } else if (trim($cDecrypted->notas) !== '') {
+                        $isEmpty = false;
+                    }
+                }
+                if ($isEmpty) {
+                    \App\Models\Cita::eliminarFisicamente($c->id);
+                }
+            }
+        }
+
         // Conteo granular de sesiones para el modal de resumen
         $stats = Cita::obtenerEstadisticasPaciente($paciente->id, Auth::id());
  
@@ -156,7 +314,7 @@ class HistoriaController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion_general' => 'nullable|string|max:255',
-            'segmentos_titulos' => 'required|array|min:1',
+            'segmentos_titulos' => 'required|array|min:1|max:4',
             'segmentos_titulos.*' => 'required|string|max:255',
         ]);
 
@@ -227,7 +385,7 @@ class HistoriaController extends Controller
 
         $cita = Cita::crearNotaManual($pacienteId, Auth::id());
 
-        return redirect()->route('citas.edit.note', $cita->id)->with('success', 'Nueva nota de sesión creada. Puedes comenzar a redactar.');
+        return redirect()->route('citas.edit.note', $cita->id);
     }
 
     public function downloadZip($pacienteId)
@@ -270,6 +428,241 @@ class HistoriaController extends Controller
         }
 
         return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Genera y descarga el reporte PDF del expediente general.
+     */
+    public function reportePdf($pacienteId)
+    {
+        ini_set('memory_limit', '512M');
+        $userId = Auth::id();
+        $paciente = $this->obtenerUsuario($pacienteId);
+        abort_if(!$paciente, 404);
+
+        // Añadir propiedades calculadas
+        $paciente->name = trim(($paciente->nombres ?? '') . ' ' . ($paciente->apellidos ?? ''));
+
+        // Validar acceso
+        $historia = HistoriaClinica::verificarAcceso($paciente->id, $userId);
+
+        if (!$historia) {
+            abort(403, 'No tienes acceso a este expediente.');
+        }
+
+        $seccionesPersonalizadas = HistoriaClinica::obtenerSeccionesConSegmentos($historia->id);
+        $stats = Cita::obtenerEstadisticasPaciente($paciente->id, $userId);
+        $enfermedadesVinculadas = HistoriaClinica::obtenerEnfermedadesVinculadas($historia->id);
+
+        $pdf = PDF::loadView('historias.reportePDF', compact('paciente', 'historia', 'seccionesPersonalizadas', 'stats', 'enfermedadesVinculadas'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Expediente_General_' . Str::slug($paciente->name) . '.pdf');
+    }
+
+    /**
+     * Genera y descarga el reporte Word del expediente general.
+     */
+    public function reporteWord($pacienteId)
+    {
+        $userId = Auth::id();
+        $paciente = $this->obtenerUsuario($pacienteId);
+        abort_if(!$paciente, 404);
+
+        $paciente->name = trim(($paciente->nombres ?? '') . ' ' . ($paciente->apellidos ?? ''));
+        $historia = HistoriaClinica::verificarAcceso($paciente->id, $userId);
+
+        if (!$historia) {
+            abort(403, 'No tienes acceso a este expediente.');
+        }
+
+        $seccionesPersonalizadas = HistoriaClinica::obtenerSeccionesConSegmentos($historia->id);
+        $enfermedadesVinculadas = HistoriaClinica::obtenerEnfermedadesVinculadas($historia->id);
+
+        $tempFile = \App\Exports\Historias\WordExport::generateExpedienteGeneral($paciente, $seccionesPersonalizadas, $enfermedadesVinculadas);
+
+        return response()->download($tempFile)->deleteFileAfterSend(true);
+    }
+
+    public function expedienteCompletoPdf($pacienteId)
+    {
+        ini_set('memory_limit', '512M');
+        $userId = Auth::id();
+        $paciente = $this->obtenerUsuario($pacienteId);
+        abort_if(!$paciente, 404);
+
+        $paciente->name = trim(($paciente->nombres ?? '') . ' ' . ($paciente->apellidos ?? ''));
+        $historia = HistoriaClinica::verificarAcceso($paciente->id, $userId);
+
+        if (!$historia) {
+            abort(403, 'No tienes acceso a este expediente.');
+        }
+
+        $seccionesPersonalizadas = HistoriaClinica::obtenerSeccionesConSegmentos($historia->id);
+        $enfermedadesVinculadas = HistoriaClinica::obtenerEnfermedadesVinculadas($historia->id);
+        
+        $citasSeleccionadas = Cita::obtenerCitasRealizadas($paciente->id, $userId);
+        $stats = Cita::obtenerEstadisticasPaciente($paciente->id, $userId);
+
+        $pdf = PDF::loadView('historias.expedienteCompletoPDF', compact('paciente', 'historia', 'seccionesPersonalizadas', 'enfermedadesVinculadas', 'citasSeleccionadas', 'stats'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Expediente_Completo_' . Str::slug($paciente->name) . '.pdf');
+    }
+
+    public function expedienteCompletoWord($pacienteId)
+    {
+        $userId = Auth::id();
+        $paciente = $this->obtenerUsuario($pacienteId);
+        abort_if(!$paciente, 404);
+
+        $paciente->name = trim(($paciente->nombres ?? '') . ' ' . ($paciente->apellidos ?? ''));
+        $historia = HistoriaClinica::verificarAcceso($paciente->id, $userId);
+
+        if (!$historia) {
+            abort(403, 'No tienes acceso a este expediente.');
+        }
+
+        $seccionesPersonalizadas = HistoriaClinica::obtenerSeccionesConSegmentos($historia->id);
+        $enfermedadesVinculadas = HistoriaClinica::obtenerEnfermedadesVinculadas($historia->id);
+        $citasSeleccionadas = Cita::obtenerCitasRealizadas($paciente->id, $userId);
+        $stats = Cita::obtenerEstadisticasPaciente($paciente->id, $userId);
+        
+        $psicologo = $this->obtenerUsuario($userId);
+        $psicologoName = trim(($psicologo->nombres ?? '') . ' ' . ($psicologo->apellidos ?? ''));
+
+        $tempFile = \App\Exports\Historias\WordExport::generateExpedienteCompleto($paciente, $historia, $seccionesPersonalizadas, $enfermedadesVinculadas, $citasSeleccionadas, $stats, $psicologoName);
+
+        return response()->download($tempFile)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Genera y descarga el reporte PDF de las notas de evolución seleccionadas.
+     */
+    public function evolucionPdf($pacienteId)
+    {
+        ini_set('memory_limit', '512M');
+        $request = request();
+        $userId = Auth::id();
+        $paciente = $this->obtenerUsuario($pacienteId);
+        abort_if(!$paciente, 404);
+
+        $paciente->name = trim(($paciente->nombres ?? '') . ' ' . ($paciente->apellidos ?? ''));
+
+        $historia = HistoriaClinica::verificarAcceso($paciente->id, $userId);
+        if (!$historia) {
+            abort(403, 'No tienes acceso a este expediente.');
+        }
+
+        $citasIds = $request->input('citas_ids', []);
+        $todasLasCitas = Cita::obtenerCitasRealizadas($paciente->id, $userId);
+
+        if (!empty($citasIds)) {
+            $citasSeleccionadas = $todasLasCitas->filter(fn($c) => in_array($c->id, $citasIds));
+        } else {
+            $citasSeleccionadas = $todasLasCitas;
+        }
+
+        $stats = Cita::obtenerEstadisticasPaciente($paciente->id, $userId);
+
+        $modoDescarga = $request->input('modo_descarga', 'unificado');
+
+        if ($modoDescarga === 'individuales') {
+            $zip = new \ZipArchive();
+            $zipFileName = 'Evolucion_Individuales_' . Str::slug($paciente->name) . '.zip';
+            $zipPath = storage_path('app/public/' . $zipFileName);
+
+            if (!file_exists(storage_path('app/public'))) {
+                mkdir(storage_path('app/public'), 0755, true);
+            }
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+                $count = 1;
+                foreach ($citasSeleccionadas as $cita) {
+                    $citasUna = collect([$cita]);
+                    $pdf = PDF::loadView('historias.evolucionPDF', ['paciente' => $paciente, 'historia' => $historia, 'citasSeleccionadas' => $citasUna, 'stats' => $stats])->setPaper('a4', 'portrait');
+                    $fecha = $cita->fecha ? $cita->fecha->format('Y-m-d') : 'SinFecha';
+                    $pdfContent = $pdf->output();
+                    $zip->addFromString("Nota_{$count}_{$fecha}.pdf", $pdfContent);
+                    $count++;
+                }
+                $zip->close();
+                return response()->download($zipPath)->deleteFileAfterSend(true);
+            }
+            return back()->with('error', 'Error al crear el archivo ZIP.');
+        }
+
+        $pdf = PDF::loadView('historias.evolucionPDF', compact('paciente', 'historia', 'citasSeleccionadas', 'stats'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Evolucion_' . Str::slug($paciente->name) . '.pdf');
+    }
+
+    /**
+     * Genera y descarga el reporte Word de las notas de evolución seleccionadas.
+     */
+    public function evolucionWord($pacienteId)
+    {
+        $request = request();
+        $userId = Auth::id();
+        $paciente = $this->obtenerUsuario($pacienteId);
+        abort_if(!$paciente, 404);
+
+        $paciente->name = trim(($paciente->nombres ?? '') . ' ' . ($paciente->apellidos ?? ''));
+
+        $historia = HistoriaClinica::verificarAcceso($paciente->id, $userId);
+        if (!$historia) {
+            abort(403, 'No tienes acceso a este expediente.');
+        }
+
+        $citasIds = $request->input('citas_ids', []);
+        $todasLasCitas = Cita::obtenerCitasRealizadas($paciente->id, $userId);
+
+        if (!empty($citasIds)) {
+            $citasSeleccionadas = $todasLasCitas->filter(fn($c) => in_array($c->id, $citasIds));
+        } else {
+            $citasSeleccionadas = $todasLasCitas;
+        }
+
+        $stats = Cita::obtenerEstadisticasPaciente($paciente->id, $userId);
+        $psicologo = $this->obtenerUsuario($userId);
+        $psicologoName = trim(($psicologo->nombres ?? '') . ' ' . ($psicologo->apellidos ?? ''));
+
+        $modoDescarga = $request->input('modo_descarga', 'unificado');
+
+        if (!file_exists(storage_path('app/public'))) {
+            mkdir(storage_path('app/public'), 0755, true);
+        }
+
+        if ($modoDescarga === 'individuales') {
+            $zip = new \ZipArchive();
+            $zipFileName = 'Evolucion_Individuales_' . Str::slug($paciente->name) . '.zip';
+            $zipPath = storage_path('app/public/' . $zipFileName);
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+                $count = 1;
+                $tempFiles = [];
+                foreach ($citasSeleccionadas as $cita) {
+                    $tempDocPath = storage_path('app/public/temp_doc_' . $count . '.docx');
+                    \App\Exports\Historias\WordExport::generateEvolucion(collect([$cita]), $paciente, $historia, $stats, $psicologoName, $tempDocPath);
+                    $fecha = $cita->fecha ? $cita->fecha->format('Y-m-d') : 'SinFecha';
+                    $zip->addFile($tempDocPath, "Nota_{$count}_{$fecha}.docx");
+                    $tempFiles[] = $tempDocPath;
+                    $count++;
+                }
+                $zip->close();
+                foreach($tempFiles as $f) @unlink($f);
+                return response()->download($zipPath)->deleteFileAfterSend(true);
+            }
+            return back()->with('error', 'Error al crear el archivo ZIP.');
+        }
+
+        $fileName = 'Evolucion_' . Str::slug($paciente->name) . '.docx';
+        $tempPath = storage_path('app/public/' . $fileName);
+        
+        \App\Exports\Historias\WordExport::generateEvolucion($citasSeleccionadas, $paciente, $historia, $stats, $psicologoName, $tempPath);
+
+        return response()->download($tempPath)->deleteFileAfterSend(true);
     }
 
     private function generateGeneralPdfContent($paciente, $historia): string

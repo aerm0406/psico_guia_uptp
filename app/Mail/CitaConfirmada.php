@@ -2,38 +2,37 @@
 
 namespace App\Mail;
 
-use App\Models\Cita;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Carbon\Carbon;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class CitaConfirmada extends Mailable
+class CitaConfirmada extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public Cita $cita;
+    protected $cita;
+    protected $paciente;
+    protected $psicologo;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct(Cita $cita)
+    public function __construct($cita)
     {
         $this->cita = $cita;
+        $this->paciente = $cita->paciente;
+        $this->psicologo = $cita->psicologo;
     }
 
-    /**
-     * Build the message.
-     */
     public function build()
     {
         return $this->subject('Confirmación de cita')
             ->view('emails.cita_confirmada')
             ->with([
-                'paciente' => optional($this->cita->paciente)->name ?: 'Paciente',
-                'psicologo' => optional($this->cita->psicologo)->name ?: 'Tu psicólogo',
-                'fecha' => $this->cita->fecha ? $this->cita->fecha->translatedFormat('d \d\e F, Y') : now()->translatedFormat('d \d\e F, Y'),
+                'paciente' => optional($this->paciente)->name ?: 'Paciente',
+                'psicologo' => optional($this->psicologo)->name ?: 'Tu psicólogo',
+                'fecha' => $this->cita->fecha ? Carbon::parse($this->cita->fecha)->translatedFormat('d \d\e F, Y') : now()->translatedFormat('d \d\e F, Y'),
                 'hora' => $this->cita->hora ?: 'Pendiente',
-                'bloque' => $this->cita->bloque_propuesto ?: ($this->cita->bloques_sugeridos ?: 'No definido'),
+                'bloque' => $this->cita->bloque_propuesto ?? ($this->cita->bloques_sugeridos ?? 'No definido'),
             ]);
     }
 }

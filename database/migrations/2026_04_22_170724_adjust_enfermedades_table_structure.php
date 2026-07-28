@@ -13,7 +13,9 @@ return new class extends Migration
     {
         // 1. Renombrar descripcion a categoria solo si aun existe descripcion
         if (Schema::hasColumn('enfermedades', 'descripcion')) {
-            \Illuminate\Support\Facades\DB::statement('ALTER TABLE enfermedades CHANGE descripcion categoria TEXT');
+            Schema::table('enfermedades', function (Blueprint $table) {
+                $table->renameColumn('descripcion', 'categoria');
+            });
         }
 
         // 2. Limpiar datos para que coincidan con el nuevo ENUM
@@ -25,16 +27,29 @@ return new class extends Migration
             'categoria' => 'fisica'
         ]);
 
-        Schema::table('enfermedades', function (Blueprint $table) {
-            // 3. Cambiar tipo a string (variacion)
-            $table->string('tipo', 255)->nullable()->change();
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            Schema::table('enfermedades', function (Blueprint $table) {
+                // 3. Cambiar tipo a string (variacion)
+                $table->string('tipo', 255)->nullable()->change();
+                
+                // 4. Cambiar categoria a enum
+                $table->enum('categoria', ['mental', 'fisica'])->default('fisica')->change();
+                
+                // 5. Añadir el indice unico
+                $table->unique(['nombre', 'tipo', 'categoria'], 'enfermedad_unica_idx');
+            });
+        } else {
+            Schema::table('enfermedades', function (Blueprint $table) {
+                $table->string('tipo', 255)->nullable()->change();
+                $table->string('categoria', 255)->default('fisica')->change();
+            });
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE enfermedades DROP CONSTRAINT IF EXISTS enfermedades_categoria_check;");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE enfermedades ADD CONSTRAINT enfermedades_categoria_check CHECK (categoria IN ('mental', 'fisica'));");
             
-            // 4. Cambiar categoria a enum
-            $table->enum('categoria', ['mental', 'fisica'])->default('fisica')->change();
-            
-            // 5. Añadir el indice unico
-            $table->unique(['nombre', 'tipo', 'categoria'], 'enfermedad_unica_idx');
-        });
+            Schema::table('enfermedades', function (Blueprint $table) {
+                $table->unique(['nombre', 'tipo', 'categoria'], 'enfermedad_unica_idx');
+            });
+        }
     }
 
     /**
@@ -46,10 +61,16 @@ return new class extends Migration
             $table->dropUnique('enfermedad_unica_idx');
         });
 
-        \Illuminate\Support\Facades\DB::statement('ALTER TABLE enfermedades CHANGE categoria descripcion TEXT');
+        Schema::table('enfermedades', function (Blueprint $table) {
+            $table->renameColumn('categoria', 'descripcion');
+        });
         
         Schema::table('enfermedades', function (Blueprint $table) {
-            $table->enum('tipo', ['mental', 'fisica'])->default('fisica')->change();
+            if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+                $table->enum('tipo', ['mental', 'fisica'])->default('fisica')->change();
+            } else {
+                $table->string('tipo', 255)->default('fisica')->change();
+            }
         });
     }
 };

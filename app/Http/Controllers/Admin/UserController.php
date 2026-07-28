@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PsicologoAprobadoMail;
+use App\Mail\PsicologoRechazadoMail;
 use Exception;
 
 class UserController extends Controller
@@ -18,8 +21,8 @@ class UserController extends Controller
     {
         $buscar = $request->input('buscar');
         $role = $request->input('role');
-        $usuarios = $this->buscarUsuarios($buscar, $role, 8);
-        
+        $usuarios = \App\Models\User::buscarUsuarios($buscar, $role, 8);
+
 
         // Conteos estadísticos ABSOLUTOS para el tablero (Independientes de búsqueda)
         $stats = $this->obtenerEstadisticasUsuarios();
@@ -28,12 +31,25 @@ class UserController extends Controller
         $countPsicologos = $stats['psicologos'];
         $countAdmins = $stats['admins'];
 
-        if ($request->ajax()) {
+        // Soportar peticiones AJAX habituales y comprobaciones más robustas
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            // Log temporal para depuración de parámetros al solicitar listado vía AJAX
+            try {
+                \Illuminate\Support\Facades\Log::debug('Admin::UserController@index AJAX', ['buscar' => $buscar, 'role' => $role, 'is_ajax' => $request->ajax()]);
+            } catch (\Throwable $e) {
+                // no interrumpir la respuesta si el logging falla
+            }
             return view('admin.users.components.user_list', compact('usuarios', 'buscar', 'role'));
         }
 
         return view('admin.users.index', compact(
-            'usuarios', 'buscar', 'role', 'countTotal', 'countPacientes', 'countPsicologos', 'countAdmins'
+            'usuarios',
+            'buscar',
+            'role',
+            'countTotal',
+            'countPacientes',
+            'countPsicologos',
+            'countAdmins'
         ));
     }
 
@@ -59,12 +75,24 @@ class UserController extends Controller
             'apellidos' => 'required|string|max:100',
             'email' => 'required|string|email|max:255|unique:users',
             'role' => 'required|string|in:admin,psicologo,paciente',
-            'cedula' => 'nullable|string|max:20|unique:users',
+            'cedula' => 'required|string|max:20|unique:users',
+            'genero' => 'nullable|string|in:Masculino,Femenino',
+            'fecha_nacimiento' => 'nullable|date',
+            'telefono' => 'nullable|string|max:50',
+            'estado_civil' => 'nullable|string|in:Soltero(a),Casado(a),Divorciado(a),Viudo(a)',
+            'ubicacion' => 'nullable|string|max:255',
+            'discapacidad' => 'nullable|string|in:Si,No',
+            'tipo_discapacidad' => 'nullable|string|max:255',
+            'tiene_hijos' => 'nullable|string|in:Si,No',
+            'numero_hijos' => 'nullable|integer',
+            'perfil_academico' => 'nullable|string',
+            'pnf' => 'nullable|string|max:255',
+            'semestre' => 'nullable|integer',
             'password' => [
-                'required', 
-                'string', 
-                'min:8', 
-                'max:16', 
+                'required',
+                'string',
+                'min:8',
+                'max:16',
                 'regex:/[a-z]/',
                 'regex:/[A-Z]/',
                 'regex:/[0-9]/',
@@ -76,7 +104,7 @@ class UserController extends Controller
 
         try {
             $data = $request->all();
-            
+
             $this->crearUsuarioAdmin($data);
 
             return redirect()->route('admin.users.index')->with('success', 'Usuario creado correctamente.');
@@ -122,14 +150,38 @@ class UserController extends Controller
         $request->validate([
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'role' => 'required|string|in:admin,psicologo,paciente',
-            'cedula' => 'nullable|string|max:20|unique:users,cedula,' . $id,
+            'cedula' => 'required|string|max:20|unique:users,cedula,' . $id,
             'nombres' => 'required|string|max:100',
             'apellidos' => 'required|string|max:100',
+            'genero' => 'nullable|string|in:Masculino,Femenino',
+            'fecha_nacimiento' => 'nullable|date',
+            'telefono' => 'nullable|string|max:50',
+            'estado_civil' => 'nullable|string|in:Soltero(a),Casado(a),Divorciado(a),Viudo(a)',
+            'ubicacion' => 'nullable|string|max:255',
+            'discapacidad' => 'nullable|string|in:Si,No',
+            'tipo_discapacidad' => 'nullable|string|max:255',
+            'tiene_hijos' => 'nullable|string|in:Si,No',
+            'numero_hijos' => 'nullable|integer',
+            'perfil_academico' => 'nullable|string',
+            'pnf' => 'nullable|string|max:255',
+            'semestre' => 'nullable|integer',
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'max:16',
+                'regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*?&]/',
+            ],
+        ], [
+            'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial.',
         ]);
 
         try {
             $data = $request->all();
-            
+
             $this->actualizarUsuarioAdmin($id, $data);
 
             return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
@@ -147,7 +199,19 @@ class UserController extends Controller
     public function updatePassword(Request $request, $id)
     {
         $request->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:16',
+                'regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*?&]/',
+                'confirmed'
+            ],
+        ], [
+            'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial.',
         ]);
 
         try {
@@ -199,5 +263,50 @@ class UserController extends Controller
             return back()->with('error', 'Error al eliminar el usuario: ' . $e->getMessage());
         }
     }
-}
 
+    /**
+     * Aprueba/Verifica a un psicólogo registrado.
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function approve($id)
+    {
+        try {
+            $usuario = $this->obtenerUsuario($id);
+            \App\Models\User::aprobarPsicologo($id);
+            
+            if ($usuario && $usuario->email) {
+                Mail::to($usuario->email)->send(new PsicologoAprobadoMail($usuario));
+            }
+            
+            return redirect()->route('admin.users.index')->with('success', 'Perfil del psicólogo confirmado y verificado correctamente.');
+        } catch (Exception $e) {
+            return back()->with('error', 'Error al confirmar perfil: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Rechaza la solicitud de registro de un psicólogo.
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function reject($id)
+    {
+        try {
+            // Se elimina el usuario lógicamente (cambio de estatus)
+            $usuario = $this->obtenerUsuario($id);
+            if ($usuario && $usuario->role === 'psicologo' && $usuario->aprobado == 0) {
+                $this->eliminarUsuarioLogico($id);
+                
+                if ($usuario->email) {
+                    Mail::to($usuario->email)->send(new PsicologoRechazadoMail($usuario));
+                }
+                
+                return redirect()->route('admin.users.index')->with('success', 'Solicitud de registro rechazada y usuario inhabilitado correctamente.');
+            }
+            return back()->with('error', 'No se pudo rechazar la solicitud. Usuario no válido.');
+        } catch (Exception $e) {
+            return back()->with('error', 'Error al rechazar la solicitud: ' . $e->getMessage());
+        }
+    }
+}

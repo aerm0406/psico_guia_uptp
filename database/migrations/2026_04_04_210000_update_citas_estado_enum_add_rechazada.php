@@ -13,7 +13,12 @@ return new class extends Migration
     public function up(): void
     {
         if (Schema::hasTable('citas')) {
-            DB::statement("ALTER TABLE `citas` MODIFY `estado` ENUM('pendiente','confirmada','cancelada','rechazada') NOT NULL DEFAULT 'pendiente';");
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE `citas` MODIFY `estado` ENUM('pendiente','confirmada','cancelada','rechazada') NOT NULL DEFAULT 'pendiente';");
+            } else {
+                DB::statement("ALTER TABLE citas DROP CONSTRAINT IF EXISTS citas_estado_check;");
+                DB::statement("ALTER TABLE citas ADD CONSTRAINT citas_estado_check CHECK (estado IN ('pendiente', 'confirmada', 'cancelada', 'rechazada'));");
+            }
         }
     }
 
@@ -23,7 +28,12 @@ return new class extends Migration
     public function down(): void
     {
         if (Schema::hasTable('citas')) {
-            DB::statement("ALTER TABLE `citas` MODIFY `estado` ENUM('pendiente','confirmada','cancelada') NOT NULL DEFAULT 'pendiente';");
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE `citas` MODIFY `estado` ENUM('pendiente','confirmada','cancelada') NOT NULL DEFAULT 'pendiente';");
+            } else {
+                DB::statement("ALTER TABLE citas DROP CONSTRAINT IF EXISTS citas_estado_check;");
+                DB::statement("ALTER TABLE citas ADD CONSTRAINT citas_estado_check CHECK (estado IN ('pendiente', 'confirmada', 'cancelada'));");
+            }
         }
     }
 };

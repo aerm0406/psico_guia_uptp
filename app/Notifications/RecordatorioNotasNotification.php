@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class RecordatorioNotasNotification extends Notification
+class RecordatorioNotasNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

@@ -15,6 +15,10 @@ class PlantillaSeccionController extends Controller
     {
         $plantillas = PlantillaSeccion::obtenerPorPsicologo(Auth::id());
         
+        foreach ($plantillas as $plantilla) {
+            $plantilla->esta_en_uso = PlantillaSeccion::estaEnUso($plantilla->id, Auth::id());
+        }
+
         return view('plantillas.index', compact('plantillas'));
     }
 
@@ -28,9 +32,13 @@ class PlantillaSeccionController extends Controller
         $data = $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion_general' => 'nullable|string|max:255',
-            'segmentos' => 'nullable|array',
+            'segmentos' => 'nullable|array|max:4',
             'segmentos.*' => 'required|string|max:255',
         ]);
+
+        if (PlantillaSeccion::existeTitulo($data['titulo'], Auth::id())) {
+            return redirect()->back()->withInput()->with('error', 'Ya existe una plantilla con ese nombre. Por favor, elige un título diferente.');
+        }
 
         PlantillaSeccion::crear(Auth::id(), $data);
 
@@ -43,6 +51,10 @@ class PlantillaSeccionController extends Controller
         
         if (!$plantilla) {
             abort(404);
+        }
+
+        if (PlantillaSeccion::estaEnUso($id, Auth::id())) {
+            return redirect()->route('plantillas.index')->with('error', 'No se puede editar esta sección porque ya está siendo utilizada por al menos un paciente.');
         }
 
         // Decodificar los segmentos si existen
@@ -63,12 +75,20 @@ class PlantillaSeccionController extends Controller
             abort(404);
         }
 
+        if (PlantillaSeccion::estaEnUso($id, Auth::id())) {
+            return redirect()->route('plantillas.index')->with('error', 'No se puede editar esta sección porque ya está siendo utilizada.');
+        }
+
         $data = $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion_general' => 'nullable|string|max:255',
-            'segmentos' => 'nullable|array',
+            'segmentos' => 'nullable|array|max:4',
             'segmentos.*' => 'required|string|max:255',
         ]);
+
+        if (PlantillaSeccion::existeTitulo($data['titulo'], Auth::id(), $id)) {
+            return redirect()->back()->withInput()->with('error', 'Ya existe otra plantilla con ese nombre. Por favor, elige un título diferente.');
+        }
 
         PlantillaSeccion::actualizar($id, Auth::id(), $data);
 
@@ -81,6 +101,10 @@ class PlantillaSeccionController extends Controller
         
         if (!$plantilla) {
             abort(404);
+        }
+
+        if (PlantillaSeccion::estaEnUso($id, Auth::id())) {
+            return redirect()->route('plantillas.index')->with('error', 'No se puede eliminar esta sección porque ya está siendo utilizada en el expediente de al menos un paciente.');
         }
 
         PlantillaSeccion::eliminar($id, Auth::id());

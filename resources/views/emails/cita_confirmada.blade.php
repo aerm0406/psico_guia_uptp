@@ -6,16 +6,13 @@
     <title>Confirmación de cita</title>
 </head>
 <body>
-    <p>Hola {{ $paciente }},</p>
+    <p>Hola <strong>{{ $paciente }}</strong>,</p>
 
-    <p>Tu cita ha sido confirmada con éxito.</p>
+    <p>El psicólogo <strong>{{ $psicologo }}</strong> ha confirmado un encuentro, el día <strong>{{ $fecha }}</strong> a las <strong>{{ $hora }}</strong>.</p>
+    
+    <p>Bloque asignado: <strong>{{ $bloque }}</strong></p>
 
-    <p>
-        Psicólogo: <strong>{{ $psicologo }}</strong><br>
-        Fecha: <strong>{{ $fecha }}</strong><br>
-        Hora: <strong>{{ $hora }}</strong><br>
-        Bloque asignado: <strong>{{ $bloque }}</strong>
-    </p>
+    <p><a href="{{ route('citas.index') }}" style="padding: 10px 15px; background-color: #0284c7; color: white; text-decoration: none; border-radius: 5px;">Ver mis Citas</a></p>
 
     <p>Por favor, guarda esta información y llega con tiempo.</p>
 

@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\Message;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -15,27 +14,18 @@ class MessageSent implements ShouldBroadcastNow
 
     public $message;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(Message $message)
+    public function __construct($message)
     {
         $this->message = $message;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
     public function broadcastOn(): array
     {
-        $conversation = $this->message->conversation;
-        $recipientId = ($conversation->user_one_id === $this->message->sender_id) 
-            ? $conversation->user_two_id 
+        $conversation = \Illuminate\Support\Facades\DB::table('conversations')->where('id', $this->message->conversation_id)->first();
+        $recipientId = ($conversation->user_one_id == $this->message->sender_id)
+            ? $conversation->user_two_id
             : $conversation->user_one_id;
 
-        // Emitimos en el canal de conversación y en el canal global privado del receptor
         return [
             new PrivateChannel('chat.' . $this->message->conversation_id),
             new PrivateChannel('App.Models.User.' . $recipientId),
@@ -48,7 +38,7 @@ class MessageSent implements ShouldBroadcastNow
             'id' => $this->message->id,
             'body' => $this->message->body,
             'sender_id' => $this->message->sender_id,
-            'time' => $this->message->created_at->format('h:i A'),
+            'time' => \Carbon\Carbon::parse($this->message->created_at)->format('h:i A'),
             'conversation_id' => $this->message->conversation_id
         ];
     }

@@ -21,6 +21,12 @@ class NotificationController extends Controller
         $data = json_decode($notification->data, true);
         $url = $data['url'] ?? route('dashboard');
         
+        // Convert to relative URL to prevent cross-domain session loss
+        $parsedUrl = parse_url($url);
+        if (isset($parsedUrl['path'])) {
+            $url = $parsedUrl['path'] . (isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
+        }
+        
         return redirect($url);
     }
 

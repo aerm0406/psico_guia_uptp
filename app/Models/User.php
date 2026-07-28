@@ -3,23 +3,46 @@
 namespace App\Models;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class User
 {
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     const ROLE_PSICOLOGO = 'psicologo';
     const ROLE_PACIENTE = 'paciente';
     const ROLE_ADMIN = 'admin';
 
+    // Propiedades principales de la tabla
+    public $id;
+    public $email;
+    public $role;
+    public $cedula;
+    public $nombres;
+    public $apellidos;
+    public $profile_photo_path;
+    public $status;
+
+    // Propiedades calculadas dinámicamente
+    public $name;
+    public $profile_photo_url;
+    public $avatar;
+    public $primera_cita;
+
     /**
-     * Genera una contraseña segura cumpliendo con:
-     * - Mínimo 8, máximo 16 caracteres.
-     * - Al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (@$!%*?&).
+     * Constructor para mapear datos cuando se instancia un objeto User individual.
+     */
+    public function __construct($properties = null)
+    {
+        if ($properties) {
+            foreach ((array) $properties as $key => $value) {
+                $this->{$key} = $value;
+            }
+        }
+    }
+
+    /**
+     * Genera una contraseña segura.
      */
     public static function generarPasswordSegura()
     {
@@ -29,13 +52,11 @@ class User
         $numbers = '0123456789';
         $special = '@$!%*?&';
 
-        // Asegurar al menos uno de cada uno
         $password = $uppercase[rand(0, strlen($uppercase) - 1)];
         $password .= $lowercase[rand(0, strlen($lowercase) - 1)];
         $password .= $numbers[rand(0, strlen($numbers) - 1)];
         $password .= $special[rand(0, strlen($special) - 1)];
 
-        // Completar el resto
         $all = $uppercase . $lowercase . $numbers . $special;
         for ($i = 0; $i < $length - 4; $i++) {
             $password .= $all[rand(0, strlen($all) - 1)];
@@ -44,22 +65,30 @@ class User
         return str_shuffle($password);
     }
 
-    /**
-     * Accesor para obtener el nombre completo de forma dinámica.
-     */
     public function getNameAttribute()
     {
         return trim(($this->nombres ?? '') . ' ' . ($this->apellidos ?? ''));
     }
 
-    /**
-     * Accesor para obtener solo el primer nombre y primer apellido.
-     */
     public function getShortNameAttribute()
     {
         $firstName = explode(' ', trim($this->nombres ?? ''))[0];
         $firstLastName = explode(' ', trim($this->apellidos ?? ''))[0];
         return trim($firstName . ' ' . $firstLastName);
+    }
+
+    public function getProfilePhotoUrlAttribute()
+    {
+        return !empty($this->profile_photo_path) ? Storage::disk('public')->url($this->profile_photo_path) : null;
+    }
+
+    public function getAvatarAttribute()
+    {
+        if (!empty($this->profile_photo_path)) {
+            return Storage::disk('public')->url($this->profile_photo_path);
+        }
+        $initials = strtoupper(substr($this->nombres ?? '', 0, 1) . substr($this->apellidos ?? '', 0, 1));
+        return $initials ?: 'PR';
     }
 
     public function isPsicologo(): bool
@@ -77,117 +106,114 @@ class User
         return $this->role === self::ROLE_ADMIN;
     }
 
-    /**
-     * Filtro de busqueda de usuarios
-     */
-
-    /**
-     * Realiza una búsqueda filtrada de usuarios.
-     * @param string|null $buscar Término de búsqueda (Nombre, apellido, email o cédula).
-     * @param string|null $role Rol opcional para filtrar.
-     * @param int $cantidad Número de elementos por página.
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
     public static function buscarUsuarios($buscar = null, $role = null, $cantidad = 8)
     {
+        // Construir nombre seguro evitando NULLs y espacio sobrante
         $query = DB::table('users')
-            ->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
+            ->select('users.*', DB::raw("TRIM(CONCAT(COALESCE(nombres, ''), ' ', COALESCE(apellidos, ''))) as name"))
             ->where('status', 1);
 
-        if ($role) {
-            $query->where('role', $role);
+        // Normalizar y validar el parámetro role para hacerlo tolerante a mayúsculas/espacios
+        $allowedRoles = [self::ROLE_ADMIN, self::ROLE_PACIENTE, self::ROLE_PSICOLOGO];
+        $roleNormalized = null;
+        if (!is_null($role)) {
+            if (is_array($role)) {
+                $roleNormalized = strtolower(trim($role[0] ?? ''));
+            } else {
+                $roleNormalized = strtolower(trim((string) $role));
+            }
         }
 
+        if ($roleNormalized && in_array($roleNormalized, $allowedRoles, true)) {
+            $query->whereRaw("LOWER(TRIM(COALESCE(role, ''))) = ?", [$roleNormalized]);
+        }
+
+        // Búsqueda insensible a mayúsculas/minúsculas y segura frente a NULLs
         if ($buscar) {
-            $query->where(function ($q) use ($buscar) {
-                $q->where('nombres', 'like', "%{$buscar}%")
-                  ->orWhere('apellidos', 'like', "%{$buscar}%")
-                  ->orWhere('email', 'like', "%{$buscar}%")
-                  ->orWhere('cedula', 'like', "%{$buscar}%");
+            $buscarNormalized = mb_strtolower($buscar, 'UTF-8');
+            $query->where(function ($q) use ($buscarNormalized) {
+                $q->whereRaw("LOWER(COALESCE(nombres, '')) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(COALESCE(apellidos, '')) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(TRIM(CONCAT(COALESCE(nombres, ''), ' ', COALESCE(apellidos, '')))) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(COALESCE(email, '')) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(COALESCE(cedula, '')) LIKE ?", ["{$buscarNormalized}%"]);
             });
         }
 
         return $query->orderBy('id', 'desc')->paginate($cantidad);
     }
 
-    /**
-     * Obtiene un usuario específico por su ID siempre que esté activo.
-     * @param int $id
-     * @return \stdClass|null
-     */
+    public static function obtenerPacientesSinCita($busqueda = '')
+    {
+        $citasActivasIds = DB::table('citas')
+            ->whereIn('estado', ['pendiente', 'confirmada'])
+            ->pluck('user_id');
+
+        $query = DB::table('users')
+            ->select('users.*', DB::raw("TRIM(CONCAT(COALESCE(nombres, ''), ' ', COALESCE(apellidos, ''))) as name"))
+            ->where('role', self::ROLE_PACIENTE)
+            ->where('status', 1)
+            ->whereNotIn('id', $citasActivasIds);
+
+        if ($busqueda) {
+            $buscarNormalized = mb_strtolower($busqueda, 'UTF-8');
+            $query->where(function ($q) use ($buscarNormalized) {
+                $q->whereRaw("LOWER(COALESCE(nombres, '')) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(COALESCE(apellidos, '')) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(TRIM(CONCAT(COALESCE(nombres, ''), ' ', COALESCE(apellidos, '')))) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(COALESCE(email, '')) LIKE ?", ["%{$buscarNormalized}%"])
+                    ->orWhereRaw("LOWER(COALESCE(cedula, '')) LIKE ?", ["{$buscarNormalized}%"]);
+            });
+        }
+
+        $usuariosRaw = $query->orderBy('nombres', 'asc')->limit(20)->get();
+
+        return $usuariosRaw->map(function ($u) {
+            return new self($u);
+        });
+    }
+
     public static function obtenerUsuarioPorId($id)
     {
-        $user = DB::table('users')
+        $userRaw = DB::table('users')
             ->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
             ->where('id', $id)
             ->where('status', 1)
             ->first();
 
-        if ($user) {
+        if ($userRaw) {
+            $user = new self($userRaw);
+
+            if (!isset($user->profile_photo_path)) {
+                $user->profile_photo_path = null;
+            }
+
+            $user->profile_photo_url = !empty($user->profile_photo_path) ? Storage::disk('public')->url($user->profile_photo_path) : null;
+            $initials = strtoupper(substr($user->nombres ?? '', 0, 1) . substr($user->apellidos ?? '', 0, 1));
+            $user->avatar = $user->profile_photo_url ?: ($initials ?: 'PR');
+
             $user->primera_cita = DB::table('citas')
                 ->where('user_id', $id)
                 ->whereNotNull('fecha')
                 ->orderBy('fecha', 'asc')
                 ->value('fecha');
+
+            return $user;
         }
 
-        return $user;
+        return null;
     }
 
-    /**
-     * Instancia un modelo User desde Query Builder para envío de notificaciones.
-     */
     public static function instanciarParaNotificacion($id)
     {
         $data = DB::table('users')->where('id', $id)->first();
         if (!$data) return null;
-        $notifiable = new class {
-            use \Illuminate\Notifications\Notifiable;
-            public $id;
-            public $email;
-            public $nombres;
-            public $apellidos;
-            public $name;
-            public $role;
-
-            public function getKey() {
-                return $this->id;
-            }
-
-            public function getMorphClass() {
-                return \App\Models\User::class;
-            }
-
-            public function routeNotificationForMail($notification) {
-                return $this->email;
-            }
-
-            public function notifications() {
-                return new class($this->id) {
-                    private $userId;
-                    public function __construct($userId) {
-                        $this->userId = $userId;
-                    }
-                    public function create($data) {
-                        \Illuminate\Support\Facades\DB::table('notifications')->insert([
-                            'id' => $data['id'] ?? \Illuminate\Support\Str::uuid()->toString(),
-                            'type' => $data['type'],
-                            'notifiable_type' => 'App\Models\User',
-                            'notifiable_id' => $this->userId,
-                            'data' => is_array($data['data']) ? json_encode($data['data']) : $data['data'],
-                            'read_at' => null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                };
-            }
-        };
-
+        $notifiable = new \App\Models\NotifiableUser();
+        
         foreach ((array) $data as $key => $value) {
             $notifiable->{$key} = $value;
         }
-        $notifiable->name = trim($data->nombres . ' ' . $data->apellidos);
+        $notifiable->name = trim(($data->nombres ?? '') . ' ' . ($data->apellidos ?? ''));
 
         return $notifiable;
     }
@@ -198,7 +224,7 @@ class User
             DB::beginTransaction();
             $id = DB::table('users')->insertGetId([
                 'email' => $data['email'] ?? null,
-                'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+                'password' => Hash::make($data['password']),
                 'role' => $data['role'],
                 'cedula' => $data['cedula'] ?? null,
                 'nombres' => $data['nombres'] ?? null,
@@ -207,7 +233,7 @@ class User
                 'must_change_password' => true,
                 'status' => 1,
                 'created_at' => now(),
-                'updated_at' => null, 
+                'updated_at' => null,
             ]);
             DB::commit();
             return $id;
@@ -221,14 +247,15 @@ class User
     {
         try {
             DB::beginTransaction();
+            $nombreCompleto = trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? ''));
             $id = DB::table('users')->insertGetId([
-                'name' => trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? '')),
                 'nombres' => $data['nombres'] ?? null,
                 'apellidos' => $data['apellidos'] ?? null,
                 'cedula' => $data['cedula'] ?? null,
-                'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+                'password' => Hash::make($data['password']),
                 'role' => $data['role'],
-                'email' => null,
+                'aprobado' => $data['role'] === self::ROLE_PSICOLOGO ? 0 : 1,
+                'email' => $data['email'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -240,25 +267,34 @@ class User
         }
     }
 
-    /**
-     * Actualiza los datos de un usuario existente.
-     * Uso: Query Builder.
-     */
     public static function actualizarUsuario($id, $data)
     {
         try {
             DB::beginTransaction();
+            $nombreCompleto = trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? ''));
             $updateData = [
                 'email' => $data['email'] ?? null,
                 'role' => $data['role'],
                 'cedula' => $data['cedula'] ?? null,
                 'nombres' => $data['nombres'] ?? null,
                 'apellidos' => $data['apellidos'] ?? null,
-                'updated_at' => now(), // Se marca la fecha de edición
+                'genero' => $data['genero'] ?? null,
+                'fecha_nacimiento' => $data['fecha_nacimiento'] ?? null,
+                'telefono' => $data['telefono'] ?? null,
+                'estado_civil' => $data['estado_civil'] ?? null,
+                'ubicacion' => $data['ubicacion'] ?? null,
+                'discapacidad' => $data['discapacidad'] ?? 'No',
+                'tipo_discapacidad' => $data['tipo_discapacidad'] ?? null,
+                'tiene_hijos' => $data['tiene_hijos'] ?? 'No',
+                'numero_hijos' => $data['numero_hijos'] ?? null,
+                'perfil_academico' => $data['perfil_academico'] ?? null,
+                'pnf' => $data['pnf'] ?? null,
+                'semestre' => $data['semestre'] ?? null,
+                'updated_at' => now(),
             ];
 
             if (!empty($data['password'])) {
-                $updateData['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
+                $updateData['password'] = Hash::make($data['password']);
             }
 
             $res = DB::table('users')->where('id', $id)->update($updateData);
@@ -270,18 +306,12 @@ class User
         }
     }
 
-    /**
-     * Actualiza la contraseña de un usuario.
-     * @param int $id
-     * @param string $newPassword Contraseña ya hasheada.
-     * @return int
-     */
     public static function actualizarContrasena($id, $newPassword)
     {
         try {
             DB::beginTransaction();
             $res = DB::table('users')->where('id', $id)->update([
-                'password' => \Illuminate\Support\Facades\Hash::make($newPassword),
+                'password' => Hash::make($newPassword),
                 'updated_at' => now(),
             ]);
             DB::commit();
@@ -292,11 +322,6 @@ class User
         }
     }
 
-    /**
-     * Realiza un borrado lógico del usuario cambiando su status a 0.
-     * @param int $id
-     * @return int
-     */
     public static function eliminarUsuario($id)
     {
         try {
@@ -326,13 +351,6 @@ class User
         }
     }
 
-    /**
-     * Obtiene la lista de psicólogos activos.
-     * @return \Illuminate\Support\Collection
-     */
-    /**
-     * Obtiene la lista completa de usuarios con rol de psicólogo.
-     */
     public static function obtenerPsicologos()
     {
         return DB::table('users')
@@ -345,88 +363,62 @@ class User
     public static function obtenerContactosParaChat($userId, $isPsicologo)
     {
         if ($isPsicologo) {
-            $pacientesIds = \Illuminate\Support\Facades\DB::table('citas')->where('psicologo_id', $userId)
-                ->pluck('user_id')
-                ->unique();
-            return \Illuminate\Support\Facades\DB::table('users')
-                ->select('users.*', \Illuminate\Support\Facades\DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
+            $pacientesIds = DB::table('citas')->where('psicologo_id', $userId)->pluck('user_id')->unique();
+            return DB::table('users')->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
                 ->whereIn('id', $pacientesIds)->get();
         } else {
-            $psicologosIds = \Illuminate\Support\Facades\DB::table('citas')->where('user_id', $userId)
-                ->pluck('psicologo_id')
-                ->unique();
-            return \Illuminate\Support\Facades\DB::table('users')
-                ->select('users.*', \Illuminate\Support\Facades\DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
-                ->whereIn('id', $psicologosIds)->get();
+            $psicologosIds = DB::table('citas')->where('user_id', $userId)->pluck('psicologo_id')->unique();
+            return DB::table('users')->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
+                ->whereIn('id', $psicologosIds)->get()
+                ->map(function($psicologo) {
+                    $firstName = explode(' ', trim($psicologo->nombres ?? ''))[0] ?? '';
+                    $firstLastName = explode(' ', trim($psicologo->apellidos ?? ''))[0] ?? '';
+                    $shortName = trim($firstName . ' ' . $firstLastName);
+                    $psicologo->name = $shortName ?: $psicologo->name;
+                    return $psicologo;
+                });
         }
     }
 
     public static function obtenerEstadisticas()
     {
         return [
-            'total' => DB::table('users')->count(),
-            'pacientes' => DB::table('users')->where('role', self::ROLE_PACIENTE)->count(),
-            'psicologos' => DB::table('users')->where('role', self::ROLE_PSICOLOGO)->count(),
-            'admins' => DB::table('users')->where('role', self::ROLE_ADMIN)->count(),
+            'total' => DB::table('users')->where('status', 1)->count(),
+            'pacientes' => DB::table('users')->where('status', 1)->where('role', self::ROLE_PACIENTE)->count(),
+            'psicologos' => DB::table('users')->where('status', 1)->where('role', self::ROLE_PSICOLOGO)->count(),
+            'admins' => DB::table('users')->where('status', 1)->where('role', self::ROLE_ADMIN)->count(),
         ];
     }
 
-    /**
-     * Métodos Consolidados de Pacientes
-     */
-
-    /**
-     * Lista pacientes que tienen alguna cita con un psicólogo específico.
-     * @param int $psicologoId
-     * @param string|null $buscar
-     * @param int $cantidad
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
     public static function obtenerPacientesConCitas($psicologoId, $buscar = null, $cantidad = 5)
     {
         $query = DB::table('users')->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
             ->selectRaw('(SELECT MIN(fecha) FROM citas WHERE user_id = users.id AND psicologo_id = ? AND estado = "realizada") as primera_cita', [$psicologoId])
             ->whereExists(function ($q) use ($psicologoId) {
-                $q->select(\Illuminate\Support\Facades\DB::raw(1))
-                  ->from('citas')
-                  ->whereColumn('citas.user_id', 'users.id')
-                  ->where('citas.psicologo_id', $psicologoId)
-                  ->where('citas.estado', '!=', 'cancelada');
+                $q->select(DB::raw(1))->from('citas')->whereColumn('citas.user_id', 'users.id')
+                    ->where('citas.psicologo_id', $psicologoId)->where('citas.estado', 'realizada');
             });
 
         if ($buscar) {
             $query->where(function ($q) use ($buscar) {
-                $q->where('nombres', 'like', "%{$buscar}%")
-                  ->orWhere('apellidos', 'like', "%{$buscar}%")
-                  ->orWhere('email', 'like', "%{$buscar}%");
+                $q->where('nombres', 'like', "%{$buscar}%")->orWhere('apellidos', 'like', "%{$buscar}%")->orWhere('email', 'like', "%{$buscar}%");
             });
         }
 
         return $query->orderBy('nombres')->orderBy('apellidos')->paginate($cantidad);
     }
 
-    /**
-     * Lista todos los pacientes del sistema que tengan al menos una cita.
-     * @param string|null $buscar
-     * @param int $cantidad
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
     public static function obtenerTodosPacientes($buscar = null, $cantidad = 10)
     {
         $query = DB::table('users')->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
             ->selectRaw('(SELECT MIN(fecha) FROM citas WHERE user_id = users.id AND estado = "realizada") as primera_cita')
             ->whereExists(function ($q) {
-                $q->select(\Illuminate\Support\Facades\DB::raw(1))
-                  ->from('citas')
-                  ->whereColumn('citas.user_id', 'users.id')
-                  ->where('citas.estado', '!=', 'cancelada');
+                $q->select(DB::raw(1))->from('citas')->whereColumn('citas.user_id', 'users.id')->where('citas.estado', '!=', 'cancelada');
             });
 
         if ($buscar) {
             $query->where(function ($q) use ($buscar) {
-                $q->where('nombres', 'like', "%{$buscar}%")
-                  ->orWhere('apellidos', 'like', "%{$buscar}%")
-                  ->orWhere('email', 'like', "%{$buscar}%");
+                $q->where('nombres', 'like', "%{$buscar}%")->orWhere('apellidos', 'like', "%{$buscar}%")->orWhere('email', 'like', "%{$buscar}%");
             });
         }
 
@@ -435,10 +427,7 @@ class User
 
     public function getConversationsAttribute()
     {
-        return DB::table('conversations')
-            ->where('user_one_id', $this->id)
-            ->orWhere('user_two_id', $this->id)
-            ->get();
+        return DB::table('conversations')->where('user_one_id', $this->id)->orWhere('user_two_id', $this->id)->get();
     }
 
     public function getSentMessagesAttribute()
@@ -463,66 +452,60 @@ class User
 
     public function unreadMessagesCount()
     {
-        // Get conversations where the user is part of (Using Query Builder)
-        $conversationIds = DB::table('conversations')
-            ->where('user_one_id', $this->id)
-            ->orWhere('user_two_id', $this->id)
-            ->pluck('id');
-
-        return DB::table('messages')
-            ->whereIn('conversation_id', $conversationIds)
-            ->where('sender_id', '!=', $this->id)
-            ->whereNull('read_at')
-            ->count();
+        $conversationIds = DB::table('conversations')->where('user_one_id', $this->id)->orWhere('user_two_id', $this->id)->pluck('id');
+        return DB::table('messages')->whereIn('conversation_id', $conversationIds)->where('sender_id', '!=', $this->id)->whereNull('read_at')->count();
     }
 
     public static function contarMensajesNoLeidos($userId)
     {
-        // Get conversations where the user is part of (Using Query Builder)
-        $conversationIds = DB::table('conversations')
-            ->where('user_one_id', $userId)
-            ->orWhere('user_two_id', $userId)
-            ->pluck('id');
-
-        return DB::table('messages')
-            ->whereIn('conversation_id', $conversationIds)
-            ->where('sender_id', '!=', $userId)
-            ->whereNull('read_at')
-            ->count();
+        $conversationIds = DB::table('conversations')->where('user_one_id', $userId)->orWhere('user_two_id', $userId)->pluck('id');
+        return DB::table('messages')->whereIn('conversation_id', $conversationIds)->where('sender_id', '!=', $userId)->whereNull('read_at')->count();
     }
 
-    /**
-     * Obtiene la lista de psicólogos que tienen horarios activos configurados.
-     * Uso: Query Builder con carga manual de relaciones para máxima velocidad y cumplimiento MVC.
-     */
-    /**
-     * Obtiene los psicólogos que tienen horarios activos configurados.
-     */
     public static function obtenerPsicologosDisponibles()
     {
-        // 1. Obtener psicólogos que tienen al menos un grupo activo
         $psicologos = DB::table('users')
             ->join('grupos_horarios', 'users.id', '=', 'grupos_horarios.user_id')
             ->select('users.*', DB::raw("CONCAT(users.nombres, ' ', users.apellidos) as name"))
             ->where('users.role', self::ROLE_PSICOLOGO)
             ->where('users.status', 1)
             ->where('grupos_horarios.activo', 1)
-            ->distinct()
-            ->get();
+            ->distinct()->get();
 
-        // 2. Cargar grupos y horarios manualmente para cada psicólogo (Estructura esperada por la vista)
+        $diasMapSort = ['Lunes'=>1, 'Martes'=>2, 'Miércoles'=>3, 'Miercoles'=>3, 'Jueves'=>4, 'Viernes'=>5];
+
         foreach ($psicologos as $psicologo) {
-            $psicologo->gruposHorarios = DB::table('grupos_horarios')
-                ->where('user_id', $psicologo->id)
-                ->where('activo', 1)
-                ->get();
+            $target = (object) $psicologo;
+            $target->gruposHorarios = DB::table('grupos_horarios')->where('user_id', $target->id)->where('activo', 1)->get();
 
-            foreach ($psicologo->gruposHorarios as $grupo) {
-                $grupo->horarios = DB::table('horarios')
-                    ->where('grupo_horario_id', $grupo->id)
-                    ->whereIn('activo', [1, 2]) // Active and Inactive
-                    ->get();
+            $slots = [];
+            $diasLaborables = [];
+
+            foreach ($target->gruposHorarios as $grupo) {
+                $g = (object) $grupo;
+                $horarios = DB::table('horarios')->where('grupo_horario_id', $g->id)->whereIn('activo', [1, 2])->get();
+                $g->horarios = $horarios;
+
+                $horariosSorted = $horarios->sortBy(function($h) use ($diasMapSort) {
+                    return ($diasMapSort[$h->dia] ?? 9) . '-' . $h->hora_inicio;
+                });
+
+                foreach ($horariosSorted as $h) {
+                    $diaName = $h->dia === 'Miercoles' ? 'Miércoles' : $h->dia;
+                    if (!in_array($diaName, $diasLaborables)) {
+                        $diasLaborables[] = $diaName;
+                    }
+                    $inicio = \Carbon\Carbon::parse($h->hora_inicio)->format('g:i A');
+                    $fin = \Carbon\Carbon::parse($h->hora_fin)->format('g:i A');
+                    $blockStr = $diaName . ': ' . $inicio . ' - ' . $fin;
+                    if (!in_array($blockStr, $slots)) {
+                        $slots[] = $blockStr;
+                    }
+                }
             }
+
+            $target->dias_laborables = $diasLaborables;
+            $target->slots = $slots;
         }
 
         return $psicologos;
@@ -530,10 +513,114 @@ class User
 
     public static function contarUsuarios($role = null)
     {
-        $query = DB::table('users');
-        if ($role) {
-            $query->where('role', $role);
+        $query = DB::table('users')->where('status', 1);
+        if (!is_null($role) && $role !== '') {
+            $roleNormalized = strtolower(trim((string) $role));
+            $allowedRoles = [self::ROLE_ADMIN, self::ROLE_PACIENTE, self::ROLE_PSICOLOGO];
+            if (in_array($roleNormalized, $allowedRoles, true)) {
+                $query->whereRaw("LOWER(TRIM(COALESCE(role, ''))) = ?", [$roleNormalized]);
+            }
         }
         return $query->count();
+    }
+
+    /**
+     * Obtiene los pacientes de un psicólogo para el chat
+     */
+    public static function obtenerPacientesDePsicologo($psicologoId)
+    {
+        $pacientesIds = DB::table('citas')
+            ->where('psicologo_id', $psicologoId)
+            ->pluck('user_id')
+            ->unique();
+
+        if ($pacientesIds->isEmpty()) {
+            return collect();
+        }
+
+        return DB::table('users')
+            ->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
+            ->whereIn('id', $pacientesIds)
+            ->where('status', 1)
+            ->get();
+    }
+
+    /**
+     * Obtiene los psicólogos de un paciente para el chat
+     */
+    public static function obtenerPsicologosDePaciente($pacienteId)
+    {
+        $psicologosIds = DB::table('citas')
+            ->where('user_id', $pacienteId)
+            ->pluck('psicologo_id')
+            ->unique();
+
+        if ($psicologosIds->isEmpty()) {
+            return collect();
+        }
+
+        return DB::table('users')
+            ->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
+            ->whereIn('id', $psicologosIds)
+            ->where('status', 1)
+            ->get();
+    }
+
+    public static function aprobarPsicologo($id)
+    {
+        try {
+            DB::beginTransaction();
+            $res = DB::table('users')->where('id', $id)->update([
+                'aprobado' => 1,
+                'updated_at' => now(),
+            ]);
+            DB::commit();
+            return $res;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    public static function obtenerUsuarioPorEmail($email)
+    {
+        return DB::table('users')
+            ->where('email', $email)
+            ->where('status', 1)
+            ->first();
+    }
+
+    public static function obtenerUsuarioPorCedula($cedula)
+    {
+        return DB::table('users')
+            ->where('cedula', $cedula)
+            ->where('status', 1)
+            ->first();
+    }
+
+    public static function crearTokenRecuperacion($email, $token)
+    {
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $email],
+            [
+                'email' => $email,
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+    }
+
+    public static function verificarRespuestaSeguridad($hashGuardado, $respuestaIngresada)
+    {
+        $respuestaIngresada = trim($respuestaIngresada);
+        $respuestaIngresada = mb_strtolower($respuestaIngresada, 'UTF-8');
+        $unwanted_array = ['Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
+                        'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U',
+                        'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'a', 'ç'=>'c',
+                        'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
+                        'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' ];
+        $respuestaIngresada = strtr( $respuestaIngresada, $unwanted_array );
+
+        return Hash::check($respuestaIngresada, $hashGuardado);
     }
 }

@@ -200,7 +200,7 @@ class GrupoHorario
                 $grupo->horarios = DB::table('horarios')
                     ->where('grupo_horario_id', $grupo->id)
                     ->whereIn('activo', [Horario::STATUS_ACTIVE, Horario::STATUS_INACTIVE])
-                    ->orderByRaw("FIELD(dia, 'Lunes','Martes','Miércoles','Jueves','Viernes')")
+                    ->orderByRaw("CASE dia WHEN 'Lunes' THEN 1 WHEN 'Martes' THEN 2 WHEN 'Miércoles' THEN 3 WHEN 'Jueves' THEN 4 WHEN 'Viernes' THEN 5 ELSE 6 END")
                     ->orderBy('hora_inicio')
                     ->get();
                 return $grupo;
@@ -297,8 +297,8 @@ class GrupoHorario
         // 2. Obtener horarios actuales a congelar/guardar
         $horarios = Horario::obtenerPorFiltros($userId, $grupoActivo ? $grupoActivo->id : null);
 
-        if ($horarios->isEmpty()) {
-            throw new \Exception('Debe haber al menos un bloque activo/inactivo para guardar el grupo de horarios.');
+        if ($horarios->count() < 2) {
+            throw new \Exception('Debe haber al menos dos bloques de horario configurados para guardar el grupo de horarios.');
         }
 
         // Helper para generar firma única de bloques de horario para detectar duplicados

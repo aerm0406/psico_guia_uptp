@@ -13,6 +13,8 @@
                             $primerApellido = $partes[1] ?? '';
                             $iniciales = strtoupper(substr($primerNombre, 0, 1) . substr($primerApellido, 0, 1));
                             
+                            $isManual = ($cita->motivo === 'Nota de Evolución (Manual)');
+
                             // Datos para el modal
                             $fechaCita = ($paciente->primera_cita ?? null) ? \Carbon\Carbon::parse($paciente->primera_cita)->format('d/m/Y') : 'No disponible';
                             $edad = ($paciente->fecha_nacimiento ?? null) ? \Carbon\Carbon::parse($paciente->fecha_nacimiento)->age : 'No disponible';
@@ -20,7 +22,7 @@
                         @endphp
                         
                         <button type="button" 
-                                class="open-patient-modal w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                                class="open-patient-modal shrink-0 w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                                 data-patient-type="user"
                                 data-patient-name="{{ $paciente->name }}" 
                                 data-patient-email="{{ $paciente->email ?? 'No disponible' }}" 
@@ -41,10 +43,10 @@
                             <span class="text-xl font-black">{{ $iniciales }}</span>
                         </button>
 
-                        <div>
-                            <h2 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                                Nota de Sesión: {{ $cita->paciente->name }}
-                                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-md border border-indigo-100">CIE-10 READY</span>
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-base md:text-lg font-black text-slate-900 tracking-tight flex flex-wrap items-center gap-2 leading-tight mb-1">
+                                <span>Nota de Sesión: {{ $cita->paciente->name }}</span>
+                                <span class="shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-md border border-indigo-100">CIE-10 READY</span>
                             </h2>
                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                                 {{ $cita->fecha?->translatedFormat('d M, Y') ?? 'S/F' }} ({{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('g:i A') : 'S/H' }})
@@ -75,105 +77,69 @@
                     </div>
                 </div>
             @endif
-            <form action="{{ route('citas.update.notas', $cita->id) }}" method="POST" id="noteForm">
+            <form action="{{ route('citas.update.notas', $cita->id) }}" method="POST" id="form-notas-evolucion" class="relative">
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="structured" value="1">
-                
-                <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                <input type="hidden" name="is_manual" value="{{ $isManual ? '1' : '0' }}">
+                <input type="hidden" name="titulo_manual" x-model="data.titulo_manual">
+
+                <div class="space-y-8">
                     
-                    {{-- COLUMNA IZQUIERDA: RESUMEN --}}
-                    <div class="xl:col-span-2 space-y-6">
-                        <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                <h4 class="text-[11px] font-black uppercase tracking-widest">Resumen Cita</h4>
-                            </div>
-                            <div class="space-y-4">
-                                <div>
-                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cita</p>
-                                    <p class="text-sm font-bold text-slate-700">{{ $cita->fecha?->format('d/m/Y') }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Duración Estimada</p>
-                                    <p class="text-sm font-bold text-slate-700">45 minutos</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- COLUMNA CENTRAL: ANOTACIONES --}}
-                    <div class="xl:col-span-7 space-y-6">
+                    {{-- CAMPOS DINÁMICOS (Filas largas) --}}
+                    <div class="space-y-4 md:space-y-8" id="campos-dinamicos-container">
                         
-                        {{-- 1. Motivo de Consulta --}}
-                        <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
+                        @if($cita->motivo === 'Nota de Evolución (Manual)')
+                        {{-- Título Manual --}}
+                        <div class="bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-slate-100">
                             <div class="flex items-center gap-2 mb-4 text-slate-800">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                <h4 class="text-[11px] font-black uppercase tracking-widest">1. Motivo de Consulta:</h4>
+                                <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                <h4 class="text-[11px] md:text-xs font-black uppercase tracking-widest">Título de la Nota (Opcional)</h4>
                             </div>
-                            <textarea name="motivo_consulta" rows="3" 
-                                      class="w-full border-slate-100 bg-slate-50/30 rounded-xl p-4 text-sm text-slate-700 focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none font-medium"
-                                      x-model="data.motivo_consulta"
-                                      placeholder="Escribe el motivo principal reportado por el paciente..."></textarea>
+                            <input type="text" name="titulo_manual" 
+                                   class="w-full border-slate-100 bg-slate-50/30 rounded-xl p-3 md:p-4 text-sm text-slate-700 focus:ring-4 focus:ring-sky-500/5 focus:border-sky-500 transition-all font-medium"
+                                   x-model="data.titulo_manual"
+                                   placeholder="Ej: Seguimiento Mensual...">
                         </div>
+                        @endif
 
-                        {{-- 2. Observaciones Clínicas --}}
-                        <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                <h4 class="text-[11px] font-black uppercase tracking-widest">2. Observaciones Clínicas:</h4>
+                        {{-- CAMPOS DINÁMICOS DE EVOLUCIÓN --}}
+                        <template x-for="(campo, index) in data.campos_dinamicos" :key="campo.campo_id">
+                            <div class="bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-slate-100 relative group/campo">
+                                <div class="flex items-start justify-between gap-2 mb-3 md:mb-4 text-slate-800">
+                                    <!-- Icon and Title -->
+                                    <div class="flex items-start gap-2 flex-1 min-w-0 mt-1 md:mt-0 md:items-center">
+                                        <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                                        <h4 class="text-[11px] md:text-xs font-black uppercase tracking-widest leading-tight break-words">
+                                            <span x-text="index + 1"></span>. <span x-text="campo.titulo"></span> <span x-show="!isManual && campo.campo_id <= 3" class="text-rose-500">*</span>
+                                        </h4>
+                                    </div>
+                                    <!-- Controles de campo (Arriba, Abajo, Eliminar) -->
+                                    <div class="shrink-0 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover/campo:opacity-100 transition-all">
+                                        <button type="button" @click="moveCampoUp(index)" x-show="index > 0" class="p-1 md:p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-lg transition-colors" title="Subir campo">
+                                            <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+                                        </button>
+                                        <button type="button" @click="moveCampoDown(index)" x-show="index < data.campos_dinamicos.length - 1" class="p-1 md:p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-lg transition-colors" title="Bajar campo">
+                                            <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                        </button>
+                                        <div class="w-px h-4 bg-slate-200 mx-1"></div>
+                                        <button type="button" @click="removeCampoDinamico(index)" x-show="isManual || campo.campo_id > 3" class="p-1 md:p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Quitar campo">
+                                            <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <textarea :name="'campos_dinamicos[' + campo.campo_id + ']'" rows="4" 
+                                          class="w-full border-slate-100 bg-slate-50/30 rounded-xl p-3 md:p-4 text-sm text-slate-700 focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none font-medium leading-relaxed"
+                                          x-model="campo.contenido"
+                                          :required="!isManual && campo.campo_id <= 3"
+                                          placeholder="Escribe los detalles aquí..."></textarea>
                             </div>
-                            
-                            {{-- Toolbar Fake --}}
-                            <div class="flex items-center gap-1 mb-2 p-1.5 bg-slate-50 rounded-lg border border-slate-100 w-max">
-                                <button type="button" class="p-1.5 hover:bg-white rounded hover:shadow-sm transition-all"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 12h12M6 12l6-6m-6 6l6 6"></path></svg></button>
-                                <div class="w-[1px] h-4 bg-slate-200 mx-1"></div>
-                                <button type="button" class="px-2 py-1 text-[10px] font-black hover:bg-white rounded hover:shadow-sm transition-all">B</button>
-                                <button type="button" class="px-2 py-1 text-[10px] font-serif italic hover:bg-white rounded hover:shadow-sm transition-all">I</button>
-                                <button type="button" class="px-2 py-1 text-[10px] underline hover:bg-white rounded hover:shadow-sm transition-all">U</button>
-                                <div class="w-[1px] h-4 bg-slate-200 mx-1"></div>
-                                <button type="button" class="p-1.5 hover:bg-white rounded hover:shadow-sm transition-all"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg></button>
-                                <button type="button" class="p-1.5 hover:bg-white rounded hover:shadow-sm transition-all"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg></button>
-                            </div>
-
-                             <textarea name="observaciones" rows="8" 
-                                       class="w-full @error('observaciones') border-rose-300 focus:ring-rose-500/5 @else border-slate-100 bg-white @enderror rounded-xl p-4 text-sm text-slate-700 focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none font-medium leading-relaxed"
-                                       x-model="data.observaciones"
-                                       placeholder="El paciente llega puntual, se nota fatigado..."></textarea>
-                             @error('observaciones')
-                                 <p class="mt-2 text-[10px] font-black text-rose-500 uppercase tracking-wider flex items-center gap-1.5 ml-1 animate-in fade-in duration-200">
-                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                                     {{ $message }}
-                                 </p>
-                             @enderror
-                         </div>
-
-                        {{-- 3. Intervenciones --}}
-                        <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                                <h4 class="text-[11px] font-black uppercase tracking-widest">3. Intervenciones / Resumen de Sesión:</h4>
-                            </div>
-                            
-                            {{-- Toolbar Fake --}}
-                            <div class="flex items-center gap-1 mb-2 p-1.5 bg-slate-50 rounded-lg border border-slate-100 w-max">
-                                <button type="button" class="px-2 py-1 text-[10px] font-black hover:bg-white rounded hover:shadow-sm transition-all">B</button>
-                                <button type="button" class="px-2 py-1 text-[10px] font-serif italic hover:bg-white rounded hover:shadow-sm transition-all">I</button>
-                                <button type="button" class="px-2 py-1 text-[10px] underline hover:bg-white rounded hover:shadow-sm transition-all">U</button>
-                                <div class="w-[1px] h-4 bg-slate-200 mx-1"></div>
-                                <button type="button" class="p-1.5 hover:bg-white rounded hover:shadow-sm transition-all"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 12h16"></path></svg></button>
-                            </div>
-
-                            <textarea name="intervenciones" rows="8" 
-                                      class="w-full border-slate-100 bg-white rounded-xl p-4 text-sm text-slate-700 focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none font-medium leading-relaxed"
-                                      x-model="data.intervenciones"
-                                      placeholder="Se trabajaron técnicas de respiración diafragmática..."></textarea>
-                        </div>
-
+                        </template>
                     </div>
 
-                    {{-- COLUMNA DERECHA: DIAGNOSTICOS Y PLAN --}}
-                    <div class="xl:col-span-3 space-y-6">
+                    {{-- CAMPOS ESTRUCTURADOS / INTELIGENTES (Alineados abajo en 2 columnas) --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         {{-- Diagnósticos CIE-10 (Diseño homologado con Expediente General) --}}
                         <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
@@ -244,31 +210,42 @@
                             </div>
                         </div>
 
-                        {{-- [NUEVO] Avances de Sesión --}}
+                        {{-- [NUEVO] Avances de Sesión y Estado de Ánimo --}}
                         <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
                             <div class="flex items-center gap-2 mb-4 text-slate-800">
                                 <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                <h4 class="text-[11px] font-black uppercase tracking-widest">Avances de Sesión</h4>
+                                <h4 class="text-[11px] font-black uppercase tracking-widest">Avances y Estado del Paciente</h4>
                             </div>
                             
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Estado de Evolución</label>
-                                    <select name="avance_estado" x-model="data.avance_estado" 
+                                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Estado de Ánimo del Paciente @if(!$isManual)<span class="text-rose-500">*</span>@endif</label>
+                                    <select name="estado_animo_id" x-model="data.estado_animo_id" @if(!$isManual) required @endif
                                             class="w-full bg-slate-50 border-slate-100 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer">
-                                        <option value="">Seleccionar estado...</option>
-                                        <option value="estancado">Estancado / Sin cambios</option>
-                                        <option value="en_progreso">En progreso / Mejora leve</option>
-                                        <option value="logrado">Logrado / Mejora significativa</option>
+                                        <option value="">Seleccionar estado de ánimo...</option>
+                                        @foreach($estadosAnimo as $animo)
+                                            <option value="{{ $animo->id }}">{{ $animo->nombre }}</option>
+                                        @endforeach
                                     </select>
+                                    <textarea name="estado_animo_detalle" rows="2" @if(!$isManual) required @endif
+                                              class="w-full mt-2 border-slate-100 bg-slate-50/30 rounded-xl p-3 text-[11px] text-slate-600 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
+                                              x-model="data.estado_animo_detalle"
+                                              placeholder="Describe observaciones sobre su estado de ánimo..."></textarea>
                                 </div>
 
                                 <div>
-                                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Detalle del Avance</label>
-                                    <textarea name="avance_detalle" rows="3" 
-                                              class="w-full border-slate-100 bg-slate-50/30 rounded-xl p-3 text-[11px] text-slate-600 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
+                                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Estado de Evolución @if(!$isManual)<span class="text-rose-500">*</span>@endif</label>
+                                    <select name="avance_estado" x-model="data.avance_estado" @if(!$isManual) required @endif
+                                            class="w-full bg-slate-50 border-slate-100 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer">
+                                        <option value="">Seleccionar estado de avance...</option>
+                                        @foreach($avances as $avance)
+                                            <option value="{{ $avance->id }}">{{ $avance->nombre }}</option>
+                                        @endforeach
+                                    </select>
+                                    <textarea name="avance_detalle" rows="2" @if(!$isManual) required @endif
+                                              class="w-full mt-2 border-slate-100 bg-slate-50/30 rounded-xl p-3 text-[11px] text-slate-600 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
                                               x-model="data.avance_detalle"
-                                              placeholder="Describe específicamente los avances o retrocesos observados..."></textarea>
+                                              placeholder="Describe los avances o retrocesos observados..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -300,19 +277,21 @@
                                       placeholder="Razón de la próxima cita..."></textarea>
                         </div>
 
-                        {{-- BOTONES --}}
-                        <div class="flex flex-col gap-3">
-                            <button type="submit" @click="syncStructured()"
-                                    class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[20px] text-sm font-black shadow-lg shadow-indigo-100 transition-all active:scale-95 group">
-                                <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                Guardar Nota
-                            </button>
-                            <a href="{{ route('historias.show', $cita->user_id) }}" 
-                               class="w-full text-center px-6 py-3 bg-white hover:bg-slate-50 text-slate-500 rounded-[20px] text-xs font-bold border border-slate-100 transition-all">
-                                Cancelar
-                            </a>
-                        </div>
                     </div>
+                </div>
+
+                {{-- FLOATING BUTTONS --}}
+                <div class="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:bottom-8 md:right-8 z-30 flex items-center gap-2 md:gap-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md p-2 md:p-3 rounded-full shadow-2xl border border-slate-100/80 dark:border-gray-700">
+                    <button type="button" @click="showModalCampos = true" title="Añadir Campo" class="w-12 h-12 md:w-14 md:h-14 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-600 dark:hover:bg-indigo-700 text-indigo-600 dark:text-indigo-400 hover:text-white rounded-full flex items-center justify-center transition-all shadow-lg border-2 border-white dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                    <a href="{{ route('historias.show', $cita->user_id) }}" title="Cancelar" class="w-12 h-12 md:w-14 md:h-14 bg-rose-100 dark:bg-rose-900/30 hover:bg-rose-600 dark:hover:bg-rose-700 text-rose-600 dark:text-rose-400 hover:text-white rounded-full flex items-center justify-center transition-all shadow-lg border-2 border-white dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20">
+                        <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </a>
+                    <button type="submit" @click="syncStructured()" title="Guardar Nota" class="w-12 h-12 md:w-14 md:h-14 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-600 dark:hover:bg-indigo-700 text-indigo-600 dark:text-indigo-400 hover:text-white rounded-full flex items-center justify-center transition-all shadow-lg border-2 border-white dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                </div>
                 </div>
 
                 {{-- Hidden input for diagnosticos array --}}
@@ -326,14 +305,13 @@
                     <input type="hidden" :name="'diagnosticos['+index+'][nombre]'" :value="diag.nombre">
                 </template>
             </form>
-        </div>
 
-        {{-- Modal de advertencia de cambios no guardados --}}
+            {{-- Modal de advertencia de cambios no guardados --}}
         <div x-show="showUnsavedModal" 
-             class="fixed inset-0 z-[200] overflow-y-auto" 
+             class="fixed inset-0 overflow-y-auto" 
+             style="z-index: 9999;"
              x-cloak>
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                {{-- Fondo oscuro difuminado --}}
+            <div class="flex items-center justify-center min-h-screen px-4 text-center">
                 <div x-show="showUnsavedModal" 
                      x-transition:enter="ease-out duration-300"
                      x-transition:enter-start="opacity-0"
@@ -341,57 +319,173 @@
                      x-transition:leave="ease-in duration-200"
                      x-transition:leave-start="opacity-100"
                      x-transition:leave-end="opacity-0"
-                     class="fixed inset-0 transition-opacity bg-slate-900/50 backdrop-blur-sm" 
+                     class="fixed inset-0 transition-opacity bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm" 
                      @click="showUnsavedModal = false"></div>
 
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                {{-- Contenedor del Modal --}}
-                <div x-show="showUnsavedModal"
+                <div x-show="showUnsavedModal" 
                      x-transition:enter="ease-out duration-300"
                      x-transition:enter-start="opacity-0 translate-y-4 scale-95"
                      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                      x-transition:leave="ease-in duration-200"
                      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                      x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-                     class="relative inline-block w-full max-w-sm p-8 overflow-hidden text-center transition-all transform bg-white shadow-2xl rounded-[32px] border border-slate-100 z-10 sm:align-middle">
+                     class="relative inline-block w-full max-w-sm p-8 overflow-hidden text-center transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-[32px] border border-slate-100 dark:border-gray-700 z-10">
                     
-                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-amber-50 mb-6 text-amber-500 shadow-md shadow-amber-100">
-                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-50 dark:bg-amber-900/30 mb-6 text-amber-500 dark:text-amber-400">
+                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     </div>
                     
-                    <h3 class="text-xl font-black text-slate-900 mb-2 tracking-tight">¿Seguro que deseas salir?</h3>
-                    <p class="text-xs font-bold text-slate-500 mb-8 leading-relaxed">
-                        Aún no has guardado la nota de evolución de esta cita, por lo tanto, la cita no se guardará como realizada y perderás la información ingresada.
-                    </p>
+                    <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">¿Estás seguro que deseas salir?</h3>
+                    <p class="text-sm text-slate-500 dark:text-gray-400 mb-8 font-medium">Hay información aún no guardada. Si sales ahora, perderás los cambios realizados.</p>
                     
                     <div class="flex justify-center gap-4">
-                        <button type="button" @click="showUnsavedModal = false" class="flex-1 py-4 px-6 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                        <button type="button" 
+                                @click="showUnsavedModal = false"
+                                class="px-6 py-3 bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-gray-300 font-bold text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-gray-600 transition-colors uppercase tracking-widest w-full">
                             Cancelar
                         </button>
-                        <button type="button" @click="confirmLeave()" class="flex-1 py-4 px-6 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-100 transition-all">
+                        <button type="button" 
+                                @click="confirmLeave()"
+                                class="px-6 py-3 bg-amber-500 dark:bg-amber-600 hover:bg-amber-600 dark:hover:bg-amber-700 text-white font-bold text-sm rounded-xl transition-colors shadow-lg shadow-amber-500/20 uppercase tracking-widest w-full">
                             Salir
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
+        {{-- Modal para añadir Campos (Réplica del modal de Expediente Clínico) --}}
+        <div x-show="showModalCampos" 
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 overflow-y-auto" 
+             style="z-index: 9999;"
+             x-cloak>
+            <div class="flex items-center justify-center min-h-screen px-4 text-center">
+                
+                <div x-show="showModalCampos"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 transition-opacity bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm"
+                     @click="showModalCampos = false"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+                <div x-show="showModalCampos"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-[32px] sm:my-8 sm:align-middle sm:max-w-xl sm:w-full sm:p-8 border border-slate-100 dark:border-gray-700">
+
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Añadir Campo a la Sesión</h3>
+                                <p class="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Configuración de la Nota</p>
+                            </div>
+                        </div>
+                        <button @click="showModalCampos = false" class="p-2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <form id="formNuevoCampo" action="{{ route('campos.store.ajax') }}" method="POST" @submit.prevent="submitNuevoCampo">
+                        @csrf
+                        <div class="space-y-6 px-2">
+
+                            {{-- Título del Campo --}}
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Título del Campo</label>
+                                <input type="text" name="titulo" required
+                                       class="w-full border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                       placeholder="Ej: Antecedentes Familiares">
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-gray-700">
+
+                            {{-- Reutilizar Campos Existentes --}}
+                            <div>
+                                <h4 class="text-[9px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-3">Reutilizar campos existentes</h4>
+                                <div class="relative" x-data="{ openDropdownCampos: false }" @click.away="openDropdownCampos = false">
+                                    <div class="flex items-center px-4 bg-slate-50 dark:bg-gray-700/50 border border-slate-200 dark:border-gray-600 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+                                        <svg class="w-5 h-5 text-slate-400 dark:text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                        <input type="text" x-model="searchCampo"
+                                               @focus="openDropdownCampos = true"
+                                               class="w-full border-none bg-transparent text-sm font-bold text-slate-700 dark:text-white focus:ring-0 placeholder-slate-400 dark:placeholder-gray-500 py-2.5" 
+                                               placeholder="Escriba para buscar o haga clic para ver disponibles...">
+                                    </div>
+                                    
+                                    <div x-show="openDropdownCampos"
+                                         class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto custom-scrollbar"
+                                         x-cloak>
+                                         
+                                         <div class="px-4 py-2 bg-slate-50 dark:bg-gray-900/50 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-slate-100 dark:border-gray-700">
+                                            <span x-show="searchCampo === ''">Campos disponibles:</span>
+                                            <span x-show="searchCampo !== ''">Resultados encontrados:</span>
+                                         </div>
+                                         
+                                        <template x-if="camposFiltrados.length === 0">
+                                            <div class="p-4 text-xs font-bold text-red-500">No hay resultados encontrados.</div>
+                                        </template>
+                                        
+                                        <template x-for="campo in camposFiltrados" :key="campo.id">
+                                            <button type="button" @click="
+                                                addCampoFromModal(campo.id, campo.titulo);
+                                                openDropdownCampos = false;
+                                                searchCampo = '';
+                                            " class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-b border-slate-50 dark:border-gray-700/50 last:border-0 transition-colors flex items-center justify-between group">
+                                                <div class="flex flex-col gap-1">
+                                                    <span x-text="campo.titulo"></span>
+                                                    <span class="text-[9px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest" x-text="campo.psicologo_id ? 'Personalizado' : 'Sistema'"></span>
+                                                </div>
+                                                <svg class="w-5 h-5 text-slate-300 dark:text-gray-600 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Botón Guardar y Añadir --}}
+                        <div class="pt-8 flex justify-end">
+                            <button type="submit" class="w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 px-6 rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-indigo-900/30 transition-all flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                Añadir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         function clinicalNoteEditor() {
             let initialData = {
-                motivo_consulta: '',
-                observaciones: '',
-                intervenciones: '',
+                titulo_manual: '',
                 diagnosticos: [],
+                estado_animo_id: '',
+                estado_animo_detalle: '',
                 avance_estado: '',
                 avance_detalle: '',
                 plan_tratamiento: '',
                 proxima_cita_fecha: '',
-                proxima_cita_razon: ''
+                proxima_cita_razon: '',
+                campos_dinamicos: @json($camposGuardados)
             };
 
             const rawNotas = @json($cita->notas);
@@ -399,27 +493,89 @@
                 const parsed = JSON.parse(rawNotas);
                 if (typeof parsed === 'object' && parsed !== null) {
                     initialData = { ...initialData, ...parsed };
-                } else {
-                    initialData.observaciones = rawNotas; // Fallback para notas viejas
                 }
             } catch(e) {
-                initialData.observaciones = rawNotas;
+                // fall back si era texto plano no hace falta porque los nuevos son dinamicos
             }
 
             const initialSnapshot = JSON.stringify(initialData);
-            const isConfirmed = @json($cita->estado === 'confirmada');
+            const isRealizada = @json($cita->estado === 'realizada');
 
             return {
                 data: initialData,
-                hasUnsavedChanges: isConfirmed,
+                isManual: @json($isManual),
+                hasUnsavedChanges: !isRealizada,
                 showUnsavedModal: false,
+                showModalCampos: false,
+                searchCampo: '',
+                camposDisponibles: @json($camposDisponibles),
                 pendingUrl: '',
                 isSubmitting: false,
+
+                async submitNuevoCampo(e) {
+                    const form = e.target;
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = 'Guardando...';
+                    btn.disabled = true;
+
+                    const formData = new FormData(form);
+                    
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if(data.success) {
+                            // Alpine natively tracks this update
+                            this.camposDisponibles.push(data.campo);
+                            this.addCampoFromModal(data.campo.id, data.campo.titulo);
+                            
+                            form.reset();
+                            this.showModalCampos = false;
+
+                            let t = document.createElement('div');
+                            t.innerHTML = `<div id="toast" class="fixed top-6 right-6 z-50">
+                                <div class="max-w-sm w-full bg-green-600 text-white shadow-lg rounded-2xl border border-green-700 px-4 py-3">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="font-semibold">¡Listo!</p>
+                                            <p class="text-sm mt-1">Anexo guardado exitosamente.</p>
+                                        </div>
+                                        <button onclick="document.getElementById('toast')?.remove()" class="text-white opacity-70 hover:opacity-100">✕</button>
+                                    </div>
+                                </div>
+                            </div>`;
+                            document.body.appendChild(t);
+                            setTimeout(() => { document.getElementById('toast')?.remove() }, 4000);
+                        } else {
+                            AppModal.alert('Error', data.message || 'Error al guardar el campo');
+                        }
+                    } catch (error) {
+                        AppModal.alert('Error', 'Error de conexión');
+                        console.error(error);
+                    } finally {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                },
+
+                get camposFiltrados() {
+                    if (this.searchCampo.length === 0) return this.camposDisponibles;
+                    return this.camposDisponibles.filter(c => c.titulo.toLowerCase().includes(this.searchCampo.toLowerCase()));
+                },
 
                 init() {
                     // Detectar cambios profundos en los datos del formulario
                     this.$watch('data', (value) => {
-                        this.hasUnsavedChanges = isConfirmed || JSON.stringify(value) !== initialSnapshot;
+                        this.hasUnsavedChanges = !isRealizada || JSON.stringify(value) !== initialSnapshot;
                     });
 
                     // Advertencia de navegador nativa al recargar o cerrar pestaña
@@ -434,13 +590,21 @@
                     document.addEventListener('click', (e) => {
                         let link = e.target.closest('a');
                         if (link && link.href && !link.href.includes('#') && link.target !== '_blank' && !link.hasAttribute('download')) {
+                            // Ignorar si hace click dentro del propio modal
+                            if (e.target.closest('[x-show="showUnsavedModal"]')) return;
+                            
                             if (this.hasUnsavedChanges && !this.isSubmitting) {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 this.pendingUrl = link.href;
                                 this.showUnsavedModal = true;
                             }
                         }
-                    });
+                    }, { capture: true });
+                },
+
+                markAsChanged() {
+                    this.hasUnsavedChanges = true;
                 },
 
                 confirmLeave() {
@@ -464,6 +628,45 @@
                     this.hasUnsavedChanges = JSON.stringify(this.data) !== initialSnapshot;
                 },
 
+                removeCampoDinamico(index) {
+                    this.data.campos_dinamicos.splice(index, 1);
+                    this.hasUnsavedChanges = true;
+                },
+
+                moveCampoUp(index) {
+                    if (index > 0) {
+                        const temp = this.data.campos_dinamicos[index];
+                        this.data.campos_dinamicos[index] = this.data.campos_dinamicos[index - 1];
+                        this.data.campos_dinamicos[index - 1] = temp;
+                        this.hasUnsavedChanges = true;
+                    }
+                },
+
+                moveCampoDown(index) {
+                    if (index < this.data.campos_dinamicos.length - 1) {
+                        const temp = this.data.campos_dinamicos[index];
+                        this.data.campos_dinamicos[index] = this.data.campos_dinamicos[index + 1];
+                        this.data.campos_dinamicos[index + 1] = temp;
+                        this.hasUnsavedChanges = true;
+                    }
+                },
+
+                addCampoFromModal(campoId, titulo) {
+                    // Check if exists
+                    const exists = this.data.campos_dinamicos.find(c => c.campo_id == campoId);
+                    if(exists) {
+                        AppModal.alert('Acción no permitida', 'Este campo ya está en la nota de evolución.');
+                        return;
+                    }
+                    this.data.campos_dinamicos.push({
+                        campo_id: campoId,
+                        titulo: titulo,
+                        contenido: ''
+                    });
+                    this.hasUnsavedChanges = true;
+                    this.showModalCampos = false;
+                },
+
                 syncStructured() {
                     this.isSubmitting = true;
                     this.hasUnsavedChanges = false;
@@ -472,4 +675,5 @@
         }
     </script>
     @include('pacientes.partials.modal')
+
 </x-app-layout>

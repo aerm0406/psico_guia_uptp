@@ -1,4 +1,6 @@
 <div class="bg-white rounded-[2rem] md:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+    {{-- Datos para depuración: role y buscar actuales --}}
+    <div id="users-debug" data-role="{{ request()->get('role','') }}" data-buscar="{{ request()->get('buscar','') }}" style="display:none"></div>
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -50,10 +52,10 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </a>
                                 @if(auth()->id() !== $user->id)
-                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este usuario?')">
+                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" id="form-delete-user-{{ $user->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Eliminar">
+                                        <button type="button" onclick="AppModal.confirm('Confirmación', '¿Estás seguro de inhabilitar a este usuario?').then(res => { if(res) document.getElementById('form-delete-user-{{ $user->id }}').submit(); })" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Eliminar">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </form>
@@ -87,7 +89,7 @@
     </div>
     @if($usuarios->hasPages())
         <div id="users-pagination" class="px-6 py-4 bg-slate-50 border-t border-slate-100">
-            {{ $usuarios->appends(request()->query())->onEachSide(1)->links('pacientes.partials.pagination') }}
+            {{ $usuarios->appends(request()->query())->onEachSide(1)->links('admin.users.partials.pagination') }}
         </div>
     @endif
 </div>

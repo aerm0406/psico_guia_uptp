@@ -1,5 +1,7 @@
 import './bootstrap';
 
+import './theme';
+
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

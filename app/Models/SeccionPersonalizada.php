@@ -43,7 +43,7 @@ class SeccionPersonalizada
                 'orden'               => \Illuminate\Support\Facades\DB::table('historia_secciones_personalizadas')->where('historia_clinica_id', is_object($historia) ? $historia->id : $historia)->count() + 1,
                 'status'              => 1,
                 'created_at'          => now(),
-                'updated_at'          => now(),
+                'updated_at'          => null,
             ]);
 
             if (!empty($data['segmentos_titulos'])) {
@@ -53,7 +53,7 @@ class SeccionPersonalizada
                         'titulo' => $titulo,
                         'orden' => $index + 1,
                         'created_at' => now(),
-                        'updated_at' => now(),
+                        'updated_at' => null,
                     ]);
                 }
             }
@@ -72,7 +72,7 @@ class SeccionPersonalizada
                     'psicologo_id' => $psicologoId,
                     'titulo' => $data['titulo'],
                     'created_at' => now(),
-                    'updated_at' => now(),
+                    'updated_at' => null,
                 ]);
             }
 

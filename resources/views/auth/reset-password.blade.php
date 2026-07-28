@@ -42,35 +42,79 @@
                 
                 <!-- Password Reset Token -->
                 <input type="hidden" name="token" value="{{ $request->route('token') }}">
+                <!-- Email (Hidden) -->
+                <input type="hidden" name="email" value="{{ old('email', $request->email) }}">
 
-                <div class="space-y-2">
-                    <label for="email" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 block text-center">Correo Electrónico</label>
-                    <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus
-                        class="login-input block w-full px-5 py-4 rounded-xl text-sm font-medium placeholder:text-slate-300 focus:outline-none text-center"
-                        placeholder="usuario@uptp.edu.ve">
-                    <x-input-error :messages="$errors->get('email')" class="mt-1 text-center" />
-                </div>
+                <div x-data="{
+                    password: '',
+                    password_confirmation: '',
+                    get passwordStrength() {
+                        return {
+                            length: this.password.length >= 8 && this.password.length <= 16,
+                            upper: /[A-Z]/.test(this.password),
+                            lower: /[a-z]/.test(this.password),
+                            number: /[0-9]/.test(this.password),
+                            special: /[@$!%*?&]/.test(this.password)
+                        }
+                    },
+                    get passwordsMatch() {
+                        return this.password === this.password_confirmation;
+                    }
+                }" class="space-y-6">
 
-                <div class="space-y-2">
-                    <label for="password" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 block text-center">Nueva Contraseña</label>
-                    <input id="password" type="password" name="password" required
-                        class="login-input block w-full px-5 py-4 rounded-xl text-sm font-medium placeholder:text-slate-300 focus:outline-none text-center"
-                        placeholder="••••••••">
-                    <x-input-error :messages="$errors->get('password')" class="mt-1 text-center" />
-                </div>
+                    <div class="space-y-2">
+                        <label for="password" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 block text-center">Nueva Contraseña</label>
+                        <input id="password" type="password" name="password" required x-model="password"
+                            class="login-input block w-full px-5 py-4 rounded-xl text-sm font-medium placeholder:text-slate-300 focus:outline-none text-center"
+                            placeholder="••••••••">
+                        <x-input-error :messages="$errors->get('password')" class="mt-1 text-center" />
+                    </div>
 
-                <div class="space-y-2">
-                    <label for="password_confirmation" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 block text-center">Confirmar Contraseña</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" required
-                        class="login-input block w-full px-5 py-4 rounded-xl text-sm font-medium placeholder:text-slate-300 focus:outline-none text-center"
-                        placeholder="••••••••">
-                    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1 text-center" />
-                </div>
+                    <div class="space-y-2">
+                        <label for="password_confirmation" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 block text-center">Confirmar Contraseña</label>
+                        <input id="password_confirmation" type="password" name="password_confirmation" required x-model="password_confirmation"
+                            class="login-input block w-full px-5 py-4 rounded-xl text-sm font-medium placeholder:text-slate-300 focus:outline-none text-center"
+                            placeholder="••••••••">
+                        <p x-show="password_confirmation.length > 0 && !passwordsMatch" style="display: none;" class="text-sm text-red-500 mt-2 text-center">
+                            La confirmación de la contraseña no coincide.
+                        </p>
+                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1 text-center" />
+                    </div>
 
-                <div class="pt-2">
-                    <button type="submit" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-black text-sm shadow-lg shadow-sky-900/10 uppercase tracking-widest transition-all active:scale-[0.98]">
-                        Restablecer Contraseña
-                    </button>
+                    {{-- Validaciones visuales en tiempo real --}}
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-medium bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-left">
+                        <div :class="passwordStrength.length ? 'text-green-600' : 'text-slate-400'" class="flex items-center gap-2 transition-colors">
+                            <svg x-show="passwordStrength.length" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg x-show="!passwordStrength.length" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            8 - 16 caracteres
+                        </div>
+                        <div :class="passwordStrength.upper ? 'text-green-600' : 'text-slate-400'" class="flex items-center gap-2 transition-colors">
+                            <svg x-show="passwordStrength.upper" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg x-show="!passwordStrength.upper" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Una letra mayúscula
+                        </div>
+                        <div :class="passwordStrength.lower ? 'text-green-600' : 'text-slate-400'" class="flex items-center gap-2 transition-colors">
+                            <svg x-show="passwordStrength.lower" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg x-show="!passwordStrength.lower" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Una letra minúscula
+                        </div>
+                        <div :class="passwordStrength.number ? 'text-green-600' : 'text-slate-400'" class="flex items-center gap-2 transition-colors">
+                            <svg x-show="passwordStrength.number" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg x-show="!passwordStrength.number" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Un número
+                        </div>
+                        <div :class="passwordStrength.special ? 'text-green-600' : 'text-slate-400'" class="flex items-center gap-2 sm:col-span-2 transition-colors">
+                            <svg x-show="passwordStrength.special" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg x-show="!passwordStrength.special" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Un carácter especial (@$!%*?&)
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-black text-sm shadow-lg shadow-sky-900/10 uppercase tracking-widest transition-all active:scale-[0.98]">
+                            Restablecer Contraseña
+                        </button>
+                    </div>
                 </div>
             </form>
 
