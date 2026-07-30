@@ -52,7 +52,6 @@
                         <div class="flex-1 min-w-0">
                             <h2 class="text-base md:text-lg font-black text-slate-900 tracking-tight flex flex-wrap items-center gap-2 leading-tight mb-1">
                                 <span class="text-slate-900 dark:text-white">Nota de Sesión: {{ $cita->paciente->name }}</span>
-                                <span class="shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-md border border-indigo-100">CIE-10 READY</span>
                             </h2>
                             <p class="text-[10px] font-bold text-slate-400 dark:text-gray-400 uppercase tracking-[0.2em]">
                                 {{ $cita->fecha?->translatedFormat('d M, Y') ?? 'S/F' }} ({{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('g:i A') : 'S/H' }})
