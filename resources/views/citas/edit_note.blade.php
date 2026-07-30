@@ -1,7 +1,13 @@
 <x-app-layout>
-    <div class="min-h-screen bg-[#f8fafc] pb-20" x-data="clinicalNoteEditor()">
+    <style>
+        /* Forzar contraste notorio entre fondo y contenedores en modo oscuro */
+        html.dark .en-bg { background-color: #020617 !important; }
+        html.dark .en-header { background-color: #0f172a !important; border-bottom-color: #1e293b !important; }
+        html.dark .en-card { background-color: #0f172a !important; border-color: #1e293b !important; }
+    </style>
+    <div class="min-h-screen bg-[#f8fafc] en-bg pb-20" x-data="clinicalNoteEditor()">
         {{-- Cabecera Contextual --}}
-        <div class="bg-white border-b border-slate-100 mb-8 shadow-sm">
+        <div class="bg-white en-header border-b border-slate-100 mb-8 shadow-sm">
             <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
@@ -45,10 +51,10 @@
 
                         <div class="flex-1 min-w-0">
                             <h2 class="text-base md:text-lg font-black text-slate-900 tracking-tight flex flex-wrap items-center gap-2 leading-tight mb-1">
-                                <span>Nota de Sesión: {{ $cita->paciente->name }}</span>
+                                <span class="text-slate-900 dark:text-white">Nota de Sesión: {{ $cita->paciente->name }}</span>
                                 <span class="shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-md border border-indigo-100">CIE-10 READY</span>
                             </h2>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                            <p class="text-[10px] font-bold text-slate-400 dark:text-gray-400 uppercase tracking-[0.2em]">
                                 {{ $cita->fecha?->translatedFormat('d M, Y') ?? 'S/F' }} ({{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('g:i A') : 'S/H' }})
                             </p>
                         </div>
@@ -56,7 +62,7 @@
                     
                     <div class="flex items-center gap-3">
                         <a href="{{ route('historias.show', $cita->user_id) }}" 
-                           class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-200 transition-all active:scale-95">
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-white en-header hover:bg-slate-50 text-slate-600 dark:text-gray-300 rounded-xl text-xs font-bold border border-slate-200 transition-all active:scale-95">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                             Volver al Historial
                         </a>
@@ -91,13 +97,13 @@
                         
                         @if($cita->motivo === 'Nota de Evolución (Manual)')
                         {{-- Título Manual --}}
-                        <div class="bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
+                        <div class="bg-white dark:bg-gray-800 rounded-[24px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-gray-700">
+                            <div class="flex items-center gap-2 mb-4 text-slate-800 dark:text-gray-200">
                                 <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 <h4 class="text-[11px] md:text-xs font-black uppercase tracking-widest">Título de la Nota (Opcional)</h4>
                             </div>
                             <input type="text" name="titulo_manual" 
-                                   class="w-full border-slate-100 bg-slate-50/30 rounded-xl p-3 md:p-4 text-sm text-slate-700 focus:ring-4 focus:ring-sky-500/5 focus:border-sky-500 transition-all font-medium"
+                                   class="w-full border-slate-100 dark:border-gray-600 bg-slate-50/30 dark:bg-gray-700/50 rounded-xl p-3 md:p-4 text-sm text-slate-700 dark:text-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-500 transition-all font-medium"
                                    x-model="data.titulo_manual"
                                    placeholder="Ej: Seguimiento Mensual...">
                         </div>
@@ -105,8 +111,8 @@
 
                         {{-- CAMPOS DINÁMICOS DE EVOLUCIÓN --}}
                         <template x-for="(campo, index) in data.campos_dinamicos" :key="campo.campo_id">
-                            <div class="bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-slate-100 relative group/campo">
-                                <div class="flex items-start justify-between gap-2 mb-3 md:mb-4 text-slate-800">
+                            <div class="bg-white en-card rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 p-6 md:p-8 relative overflow-hidden group">
+                                <div class="flex items-start justify-between gap-2 mb-3 md:mb-4 text-slate-800 dark:text-gray-200">
                                     <!-- Icon and Title -->
                                     <div class="flex items-start gap-2 flex-1 min-w-0 mt-1 md:mt-0 md:items-center">
                                         <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h7"></path></svg>
@@ -115,7 +121,7 @@
                                         </h4>
                                     </div>
                                     <!-- Controles de campo (Arriba, Abajo, Eliminar) -->
-                                    <div class="shrink-0 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover/campo:opacity-100 transition-all">
+                                    <div class="shrink-0 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                                         <button type="button" @click="moveCampoUp(index)" x-show="index > 0" class="p-1 md:p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-lg transition-colors" title="Subir campo">
                                             <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
                                         </button>
@@ -130,7 +136,7 @@
                                 </div>
                                 
                                 <textarea :name="'campos_dinamicos[' + campo.campo_id + ']'" rows="4" 
-                                          class="w-full border-slate-100 bg-slate-50/30 rounded-xl p-3 md:p-4 text-sm text-slate-700 focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none font-medium leading-relaxed"
+                                          class="w-full border-slate-100 dark:border-gray-600 bg-slate-50/30 dark:bg-gray-700/50 rounded-xl p-3 md:p-4 text-sm text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none font-medium leading-relaxed"
                                           x-model="campo.contenido"
                                           :required="!isManual && campo.campo_id <= 3"
                                           placeholder="Escribe los detalles aquí..."></textarea>
@@ -142,9 +148,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         {{-- Diagnósticos CIE-10 (Diseño homologado con Expediente General) --}}
-                        <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
+                        <div class="bg-white en-card dark:bg-gray-800 rounded-[24px] p-6 shadow-sm border border-slate-100 dark:border-gray-700">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-2 text-slate-800">
+                                <div class="flex items-center gap-2 text-slate-800 dark:text-gray-200">
                                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                                     <h4 class="text-[11px] font-black uppercase tracking-widest">Diagnósticos Oficiales</h4>
                                 </div>
@@ -167,7 +173,7 @@
 
                             {{-- Buscador (Style: Expediente General) --}}
                             <div class="relative" x-data="{ search: '', results: [], loading: false, open: false }">
-                                <div class="flex items-center px-4 bg-white border border-slate-200 rounded-full focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all shadow-sm">
+                                <div class="flex items-center px-4 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-full focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all shadow-sm">
                                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                                     <input type="text" x-model="search" 
                                            @input.debounce.300ms="
@@ -176,23 +182,23 @@
                                                 fetch(`{{ route('enfermedades.api.search') }}?q=${encodeURIComponent(search)}`)
                                                     .then(r => r.json()).then(d => { results = d; loading = false; open = true; });
                                            "
-                                           class="w-full border-none bg-transparent text-xs font-bold text-slate-700 focus:ring-0 placeholder-slate-400 py-2.5" 
+                                           class="w-full border-none bg-transparent text-xs font-bold text-slate-700 dark:text-white focus:ring-0 placeholder-slate-400 py-2.5" 
                                            placeholder="Buscar diagnóstico o condición...">
                                 </div>
                                 
                                 <div x-show="open" @click.away="open = false" x-cloak
-                                     class="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2">
+                                     class="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-gray-700 p-2">
                                     <div class="max-h-48 overflow-y-auto custom-scrollbar">
                                         <template x-if="loading">
                                             <div class="p-3 text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest animate-pulse">Buscando...</div>
                                         </template>
                                         <template x-for="res in results" :key="res.id">
                                             <button type="button" @click="addDiagnostico(res); open = false; search = ''"
-                                                    class="w-full text-left px-4 py-2.5 hover:bg-indigo-50 rounded-xl border-b border-slate-50 last:border-none transition-colors group">
+                                                    class="w-full text-left px-4 py-2.5 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-xl border-b border-slate-50 dark:border-gray-700 last:border-none transition-colors group">
                                                 <div class="flex items-center gap-2">
                                                     <div class="w-2 h-2 rounded-full bg-indigo-400 group-hover:scale-110 transition-transform"></div>
-                                                    <span class="text-[10px] font-bold text-slate-700 group-hover:text-indigo-600" x-text="res.nombre"></span>
-                                                    <span class="text-[9px] font-black text-slate-300 ml-auto" x-text="res.codigo"></span>
+                                                    <span class="text-[10px] font-bold text-slate-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" x-text="res.nombre"></span>
+                                                    <span class="text-[9px] font-black text-slate-300 dark:text-gray-500 ml-auto" x-text="res.codigo"></span>
                                                 </div>
                                             </button>
                                         </template>
@@ -211,8 +217,8 @@
                         </div>
 
                         {{-- [NUEVO] Avances de Sesión y Estado de Ánimo --}}
-                        <div class="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
+                        <div class="bg-white en-card dark:bg-gray-800 rounded-[24px] p-6 shadow-sm border border-slate-100 dark:border-gray-700">
+                            <div class="flex items-center gap-2 mb-4 text-slate-800 dark:text-gray-200">
                                 <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                                 <h4 class="text-[11px] font-black uppercase tracking-widest">Avances y Estado del Paciente</h4>
                             </div>
@@ -221,14 +227,14 @@
                                 <div>
                                     <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Estado de Ánimo del Paciente @if(!$isManual)<span class="text-rose-500">*</span>@endif</label>
                                     <select name="estado_animo_id" x-model="data.estado_animo_id" @if(!$isManual) required @endif
-                                            class="w-full bg-slate-50 border-slate-100 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer">
+                                            class="w-full bg-slate-50 dark:bg-gray-700/50 border-slate-100 dark:border-gray-600 rounded-xl text-xs font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer">
                                         <option value="">Seleccionar estado de ánimo...</option>
                                         @foreach($estadosAnimo as $animo)
                                             <option value="{{ $animo->id }}">{{ $animo->nombre }}</option>
                                         @endforeach
                                     </select>
                                     <textarea name="estado_animo_detalle" rows="2" @if(!$isManual) required @endif
-                                              class="w-full mt-2 border-slate-100 bg-slate-50/30 rounded-xl p-3 text-[11px] text-slate-600 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
+                                              class="w-full mt-2 border-slate-100 dark:border-gray-600 bg-slate-50/30 dark:bg-gray-700/50 rounded-xl p-3 text-[11px] text-slate-600 dark:text-gray-300 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
                                               x-model="data.estado_animo_detalle"
                                               placeholder="Describe observaciones sobre su estado de ánimo..."></textarea>
                                 </div>
@@ -236,14 +242,14 @@
                                 <div>
                                     <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Estado de Evolución @if(!$isManual)<span class="text-rose-500">*</span>@endif</label>
                                     <select name="avance_estado" x-model="data.avance_estado" @if(!$isManual) required @endif
-                                            class="w-full bg-slate-50 border-slate-100 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer">
+                                            class="w-full bg-slate-50 dark:bg-gray-700/50 border-slate-100 dark:border-gray-600 rounded-xl text-xs font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer">
                                         <option value="">Seleccionar estado de avance...</option>
                                         @foreach($avances as $avance)
                                             <option value="{{ $avance->id }}">{{ $avance->nombre }}</option>
                                         @endforeach
                                     </select>
                                     <textarea name="avance_detalle" rows="2" @if(!$isManual) required @endif
-                                              class="w-full mt-2 border-slate-100 bg-slate-50/30 rounded-xl p-3 text-[11px] text-slate-600 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
+                                              class="w-full mt-2 border-slate-100 dark:border-gray-600 bg-slate-50/30 dark:bg-gray-700/50 rounded-xl p-3 text-[11px] text-slate-600 dark:text-gray-300 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all resize-none font-medium"
                                               x-model="data.avance_detalle"
                                               placeholder="Describe los avances o retrocesos observados..."></textarea>
                                 </div>
@@ -251,28 +257,28 @@
                         </div>
 
                         {{-- Plan de Tratamiento --}}
-                        <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
+                        <div class="bg-white en-card dark:bg-gray-800 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-gray-700">
+                            <div class="flex items-center gap-2 mb-4 text-slate-800 dark:text-gray-200">
                                 <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                 <h4 class="text-[11px] font-black uppercase tracking-widest">Plan de Tratamiento</h4>
                             </div>
                             <textarea name="plan_tratamiento" rows="4" 
-                                      class="w-full border-slate-100 bg-slate-50/20 rounded-xl p-3 text-[12px] text-slate-700 focus:ring-2 focus:ring-indigo-500/10 transition-all resize-none font-medium"
+                                      class="w-full border-slate-100 dark:border-gray-600 bg-slate-50/20 dark:bg-gray-700/50 rounded-xl p-3 text-[12px] text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500/10 transition-all resize-none font-medium"
                                       x-model="data.plan_tratamiento"
                                       placeholder="Asignar tareas para la casa..."></textarea>
                         </div>
 
                         {{-- Próxima Cita --}}
-                        <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100">
-                            <div class="flex items-center gap-2 mb-4 text-slate-800">
+                        <div class="bg-white en-card dark:bg-gray-800 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-gray-700">
+                            <div class="flex items-center gap-2 mb-4 text-slate-800 dark:text-gray-200">
                                 <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 <h4 class="text-[11px] font-black uppercase tracking-widest">Próxima Cita Recomendada</h4>
                             </div>
                             <input type="date" name="proxima_cita_fecha" 
-                                   class="w-full border-slate-100 bg-slate-50/20 rounded-xl p-3 text-xs font-bold text-slate-700 mb-3"
+                                   class="w-full border-slate-100 dark:border-gray-600 bg-slate-50/20 dark:bg-gray-700/50 rounded-xl p-3 text-xs font-bold text-slate-700 dark:text-white mb-3"
                                    x-model="data.proxima_cita_fecha">
                             <textarea name="proxima_cita_razon" rows="2" 
-                                      class="w-full border-slate-100 bg-slate-50/20 rounded-xl p-3 text-[11px] text-slate-600 focus:ring-2 focus:ring-indigo-500/10 transition-all resize-none font-medium"
+                                      class="w-full border-slate-100 dark:border-gray-600 bg-slate-50/20 dark:bg-gray-700/50 rounded-xl p-3 text-[11px] text-slate-600 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/10 transition-all resize-none font-medium"
                                       x-model="data.proxima_cita_razon"
                                       placeholder="Razón de la próxima cita..."></textarea>
                         </div>
@@ -407,7 +413,6 @@
                     <form id="formNuevoCampo" action="{{ route('campos.store.ajax') }}" method="POST" @submit.prevent="submitNuevoCampo">
                         @csrf
                         <div class="space-y-6 px-2">
-
                             {{-- Título del Campo --}}
                             <div>
                                 <label class="block text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Título del Campo</label>

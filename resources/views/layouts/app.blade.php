@@ -509,12 +509,11 @@
                                       :class="sidebarOpen ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0'"
                                 >Mensajes</span>
                                 @php $unreadMsgs = \App\Models\User::contarMensajesNoLeidos(auth()->id()); @endphp
-                                @if($unreadMsgs > 0)
-                                    <span class="chat-badge absolute -top-0.5 min-w-[18px] h-[18px] px-0.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white dark:border-gray-800 shadow"
-                                    >
-                                        {{ $unreadMsgs > 99 ? '99+' : $unreadMsgs }}
-                                    </span>
-                                @endif
+                                <span class="chat-badge absolute -top-0.5 min-w-[18px] h-[18px] px-0.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white dark:border-gray-800 shadow"
+                                      style="{{ $unreadMsgs > 0 ? '' : 'display: none;' }}"
+                                >
+                                    {{ $unreadMsgs > 99 ? '99+' : $unreadMsgs }}
+                                </span>
                             </button>
                         </div>
                     @endif

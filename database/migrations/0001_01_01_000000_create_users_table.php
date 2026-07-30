@@ -10,14 +10,13 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
             $table->string('nombres')->default('');
             $table->string('apellidos')->default('');
             $table->string('email')->nullable()->unique();
             $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['psicologo', 'paciente'])->default('psicologo');
+            $table->enum('role', ['admin', 'psicologo', 'paciente'])->default('psicologo');
             $table->boolean('profile_completed')->default(false);
             $table->boolean('must_change_password')->default(false);
             $table->tinyInteger('status')->default(1);

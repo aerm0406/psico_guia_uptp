@@ -223,6 +223,7 @@
                                     contact.lastMessage = e.body;
                                     contact.time = e.time;
                                     contact.unreadCount += 1;
+                                    this.updateGlobalBadge(1);
 
                                     this.contacts.splice(contactIndex, 1);
                                     this.contacts.unshift(contact);
@@ -240,10 +241,28 @@
             },
 
             selectContact(contact) {
+                if (contact.unreadCount > 0) {
+                    this.updateGlobalBadge(-contact.unreadCount);
+                }
                 this.selectedContact = contact;
                 contact.unreadCount = 0;
                 this.messages = [];
                 this.fetchMessages();
+            },
+
+            updateGlobalBadge(offset) {
+                let badge = document.querySelector('.chat-badge');
+                if (badge) {
+                    let current = parseInt(badge.innerText.replace('+', '')) || 0;
+                    let newCount = current + offset;
+                    if (newCount <= 0) {
+                        badge.style.display = 'none';
+                        badge.innerText = '0';
+                    } else {
+                        badge.style.display = 'flex';
+                        badge.innerText = newCount > 99 ? '99+' : newCount;
+                    }
+                }
             },
 
             fetchMessages() {

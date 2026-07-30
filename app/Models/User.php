@@ -247,9 +247,7 @@ class User
     {
         try {
             DB::beginTransaction();
-            $nombreCompleto = trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? ''));
             $id = DB::table('users')->insertGetId([
-                'name' => $nombreCompleto,
                 'nombres' => $data['nombres'] ?? null,
                 'apellidos' => $data['apellidos'] ?? null,
                 'cedula' => $data['cedula'] ?? null,
@@ -272,9 +270,7 @@ class User
     {
         try {
             DB::beginTransaction();
-            $nombreCompleto = trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? ''));
             $updateData = [
-                'name' => $nombreCompleto,
                 'email' => $data['email'] ?? null,
                 'role' => $data['role'],
                 'cedula' => $data['cedula'] ?? null,

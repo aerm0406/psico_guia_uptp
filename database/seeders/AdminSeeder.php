@@ -15,14 +15,13 @@ class AdminSeeder extends Seeder
     {
         if (!DB::table('users')->where('email', 'admin@psicoguia.com')->exists()) {
             DB::table('users')->insert([
-                'name' => 'Administrador Global',
                 'nombres' => 'Administrador',
                 'apellidos' => 'Global',
                 'cedula' => '00000000',
                 'email' => 'admin@psicoguia.com',
                 'password' => Hash::make('password'),
                 'genero' => 'Femenino',
-                'role' => 'psicologo',
+                'role' => 'admin',
                 'email_verified_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),

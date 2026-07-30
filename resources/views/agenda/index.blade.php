@@ -524,7 +524,7 @@
                                         <!-- Candidatos -->
                                         <div class="flex flex-col h-full transition-all duration-300" id="colCandidatos">
                                             <div class="flex justify-between items-center px-2 mb-4">
-                                                <h4 class="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em]">Candidatos Disponibles</h4>
+                                                <h4 class="text-[10px] font-black text-slate-400 dark:text-gray-300 uppercase tracking-[0.2em]">Candidatos Disponibles</h4>
                                                 <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 uppercase tracking-widest">Lista de Espera</span>
                                             </div>
                                             <div class="w-full h-[320px] rounded-[24px] border border-slate-100 dark:border-gray-700 bg-slate-50/30 dark:bg-gray-800/30 p-4 transition-all flex flex-col">
@@ -537,7 +537,7 @@
                                         <!-- Estado de Confirmación -->
                                         <div class="flex flex-col h-full transition-all duration-300" id="colEstado">
                                             <div class="flex justify-between items-center px-2 mb-4">
-                                                <h4 class="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em]">Estado de Cita</h4>
+                                                <h4 class="text-[10px] font-black text-slate-400 dark:text-gray-300 uppercase tracking-[0.2em]">Estado de Cita</h4>
                                                 <span id="blockConfirmationBadge" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800 uppercase tracking-widest hidden">Confirmado</span>
                                             </div>
                                             <div id="blockConfirmedContainer" class="w-full h-[320px] rounded-[24px] border-2 border-dashed border-slate-100 dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 flex flex-col items-center justify-center p-8 text-center transition-all">
@@ -1041,7 +1041,7 @@
                     <div class="w-16 h-16 bg-slate-100 dark:bg-gray-700 text-slate-300 dark:text-gray-500 rounded-full flex items-center justify-center mb-4">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <p class="text-sm font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">No hay paciente confirmado aún.</p>
+                    <p class="text-sm font-bold text-slate-400 dark:text-gray-300 uppercase tracking-widest">No hay paciente confirmado aún.</p>
                 `;
 
                 const candidates = getCandidatesForBlock(state.currentBlockLabel, state.currentBlockDate);
@@ -1051,22 +1051,22 @@
                         <div class="w-16 h-16 bg-slate-100 dark:bg-gray-700 text-slate-300 dark:text-gray-500 rounded-full flex items-center justify-center mb-4">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                         </div>
-                        <p class="text-sm font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Sin pacientes interesados</p>
+                        <p class="text-sm font-bold text-slate-400 dark:text-gray-300 uppercase tracking-widest">Sin pacientes interesados</p>
                     </div>`;
                 } else {
                     candidates.forEach(can => {
                         const li = document.createElement('li');
-                        li.className = `group rounded-2xl border p-4 transition-all ${can.status === 'proposed' ? 'bg-sky-50/50 border-sky-100' : 'bg-white border-slate-100'}`;
+                        li.className = `group rounded-2xl border p-4 transition-all ${can.status === 'proposed' ? 'bg-sky-50/50 dark:bg-sky-900/30 border-sky-100 dark:border-sky-800' : 'bg-white dark:bg-gray-800 border-slate-100 dark:border-gray-700'}`;
                         li.innerHTML = `<div class="flex justify-between items-center gap-4">
                             <div class="flex items-center gap-3">
-                                <div class="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                                    <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class="h-10 w-10 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center">
+                                    <svg class="h-5 w-5 text-slate-400 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
                                 <div class="flex flex-col">
-                                    ${can.status === 'proposed' ? (can.propuestaEstado === 'pendiente' ? '<span class="text-[9px] font-black text-amber-600 uppercase">Contrapropuesta enviada, en espera de respuesta</span>' : '<span class="text-[9px] font-black text-sky-600 uppercase">Agregado al bloque (Pendiente de acción)</span>') : '<span class="text-[9px] font-black text-emerald-600 uppercase">Solicitado por el paciente</span>'}
-                                    <span class="font-black text-slate-700">${Utils.escapeHtml(can.paciente)}</span>
+                                    ${can.status === 'proposed' ? (can.propuestaEstado === 'pendiente' ? '<span class="text-[9px] font-black text-amber-600 dark:text-amber-500 uppercase">Contrapropuesta enviada, en espera de respuesta</span>' : '<span class="text-[9px] font-black text-sky-600 dark:text-sky-400 uppercase">Agregado al bloque (Pendiente de acción)</span>') : '<span class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase">Solicitado por el paciente</span>'}
+                                    <span class="font-black text-slate-700 dark:text-white">${Utils.escapeHtml(can.paciente)}</span>
                                 </div>
                             </div>
                             <div class="flex gap-2">
