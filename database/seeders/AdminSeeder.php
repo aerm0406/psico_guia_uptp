@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
@@ -12,16 +13,16 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Verificar si el admin ya existe para no duplicarlo
-        if (!\Illuminate\Support\Facades\DB::table('users')->where('email', 'admin@psicoguia.com')->exists()) {
-            \Illuminate\Support\Facades\DB::table('users')->insert([
+        if (!DB::table('users')->where('email', 'admin@psicoguia.com')->exists()) {
+            DB::table('users')->insert([
+                'name' => 'Administrador Global',
                 'nombres' => 'Administrador',
                 'apellidos' => 'Global',
                 'cedula' => '00000000',
                 'email' => 'admin@psicoguia.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'password' => Hash::make('password'),
                 'genero' => 'Femenino',
-                'role' => 'admin',
+                'role' => 'psicologo',
                 'email_verified_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),

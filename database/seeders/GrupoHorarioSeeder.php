@@ -12,8 +12,8 @@ class GrupoHorarioSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\GrupoHorario::create([
-            'user_id' => 1, // Asumiendo que el primer usuario es el admin
+        \App\Models\GrupoHorario::crear([
+            'user_id' => 1,
             'nombre' => 'Horario Estándar',
             'activo' => \App\Models\GrupoHorario::STATUS_ACTIVE,
         ]);
