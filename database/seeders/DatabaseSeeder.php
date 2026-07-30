@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
             GrupoHorarioSeeder::class,
             AvanceSesionSeeder::class,
             NotaEvolucionSeeder::class,
+            EstadoAnimoSeeder::class,
+            PlantillaGlobalSeeder::class,
+            PrioridadesSeeder::class,
         ]);
     }
 }

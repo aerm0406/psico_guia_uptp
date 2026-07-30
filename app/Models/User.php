@@ -209,7 +209,7 @@ class User
         $data = DB::table('users')->where('id', $id)->first();
         if (!$data) return null;
         $notifiable = new \App\Models\NotifiableUser();
-        
+
         foreach ((array) $data as $key => $value) {
             $notifiable->{$key} = $value;
         }
@@ -249,6 +249,7 @@ class User
             DB::beginTransaction();
             $nombreCompleto = trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? ''));
             $id = DB::table('users')->insertGetId([
+                'name' => $nombreCompleto,
                 'nombres' => $data['nombres'] ?? null,
                 'apellidos' => $data['apellidos'] ?? null,
                 'cedula' => $data['cedula'] ?? null,
@@ -273,6 +274,7 @@ class User
             DB::beginTransaction();
             $nombreCompleto = trim(($data['nombres'] ?? '') . ' ' . ($data['apellidos'] ?? ''));
             $updateData = [
+                'name' => $nombreCompleto,
                 'email' => $data['email'] ?? null,
                 'role' => $data['role'],
                 'cedula' => $data['cedula'] ?? null,
@@ -370,7 +372,7 @@ class User
             $psicologosIds = DB::table('citas')->where('user_id', $userId)->pluck('psicologo_id')->unique();
             return DB::table('users')->select('users.*', DB::raw("CONCAT(nombres, ' ', apellidos) as name"))
                 ->whereIn('id', $psicologosIds)->get()
-                ->map(function($psicologo) {
+                ->map(function ($psicologo) {
                     $firstName = explode(' ', trim($psicologo->nombres ?? ''))[0] ?? '';
                     $firstLastName = explode(' ', trim($psicologo->apellidos ?? ''))[0] ?? '';
                     $shortName = trim($firstName . ' ' . $firstLastName);
@@ -472,7 +474,7 @@ class User
             ->where('grupos_horarios.activo', 1)
             ->distinct()->get();
 
-        $diasMapSort = ['Lunes'=>1, 'Martes'=>2, 'Miércoles'=>3, 'Miercoles'=>3, 'Jueves'=>4, 'Viernes'=>5];
+        $diasMapSort = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Miercoles' => 3, 'Jueves' => 4, 'Viernes' => 5];
 
         foreach ($psicologos as $psicologo) {
             $target = (object) $psicologo;
@@ -486,7 +488,7 @@ class User
                 $horarios = DB::table('horarios')->where('grupo_horario_id', $g->id)->whereIn('activo', [1, 2])->get();
                 $g->horarios = $horarios;
 
-                $horariosSorted = $horarios->sortBy(function($h) use ($diasMapSort) {
+                $horariosSorted = $horarios->sortBy(function ($h) use ($diasMapSort) {
                     return ($diasMapSort[$h->dia] ?? 9) . '-' . $h->hora_inicio;
                 });
 
@@ -614,12 +616,73 @@ class User
     {
         $respuestaIngresada = trim($respuestaIngresada);
         $respuestaIngresada = mb_strtolower($respuestaIngresada, 'UTF-8');
-        $unwanted_array = ['Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
-                        'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U',
-                        'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'a', 'ç'=>'c',
-                        'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
-                        'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' ];
-        $respuestaIngresada = strtr( $respuestaIngresada, $unwanted_array );
+        $unwanted_array = [
+            'Š' => 'S',
+            'š' => 's',
+            'Ž' => 'Z',
+            'ž' => 'z',
+            'À' => 'A',
+            'Á' => 'A',
+            'Â' => 'A',
+            'Ã' => 'A',
+            'Ä' => 'A',
+            'Å' => 'A',
+            'Æ' => 'A',
+            'Ç' => 'C',
+            'È' => 'E',
+            'É' => 'E',
+            'Ê' => 'E',
+            'Ë' => 'E',
+            'Ì' => 'I',
+            'Í' => 'I',
+            'Î' => 'I',
+            'Ï' => 'I',
+            'Ñ' => 'N',
+            'Ò' => 'O',
+            'Ó' => 'O',
+            'Ô' => 'O',
+            'Õ' => 'O',
+            'Ö' => 'O',
+            'Ø' => 'O',
+            'Ù' => 'U',
+            'Ú' => 'U',
+            'Û' => 'U',
+            'Ü' => 'U',
+            'Ý' => 'Y',
+            'Þ' => 'B',
+            'ß' => 'Ss',
+            'à' => 'a',
+            'á' => 'a',
+            'â' => 'a',
+            'ã' => 'a',
+            'ä' => 'a',
+            'å' => 'a',
+            'æ' => 'a',
+            'ç' => 'c',
+            'è' => 'e',
+            'é' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'ì' => 'i',
+            'í' => 'i',
+            'î' => 'i',
+            'ï' => 'i',
+            'ð' => 'o',
+            'ñ' => 'n',
+            'ò' => 'o',
+            'ó' => 'o',
+            'ô' => 'o',
+            'õ' => 'o',
+            'ö' => 'o',
+            'ø' => 'o',
+            'ù' => 'u',
+            'ú' => 'u',
+            'û' => 'u',
+            'ý' => 'y',
+            'þ' => 'b',
+            'ÿ' => 'y'
+        ];
+        $respuestaIngresada = strtr($respuestaIngresada, $unwanted_array);
 
         return Hash::check($respuestaIngresada, $hashGuardado);
     }
