@@ -65,8 +65,11 @@
         updateGlobalBadge(offset) {
             let badge = document.querySelector('.chat-badge');
             if (badge) {
-                let current = parseInt(badge.innerText.replace('+', '')) || 0;
+                let current = parseInt(badge.getAttribute('data-count')) || parseInt(badge.innerText.replace('+', '')) || 0;
                 let newCount = current + offset;
+                if (newCount < 0) newCount = 0;
+                
+                badge.setAttribute('data-count', newCount);
                 if (newCount <= 0) {
                     badge.style.display = 'none';
                     badge.innerText = '0';

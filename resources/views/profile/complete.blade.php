@@ -22,7 +22,7 @@
         })();
     </script>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 min-h-screen flex items-center justify-center py-12 px-4">
+<body class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:bg-[#020617] dark:from-[#020617] dark:to-[#0f172a] min-h-screen flex items-center justify-center py-12 px-4">
 
     <div class="w-full max-w-2xl" x-data="{
         step: 1,
@@ -63,7 +63,7 @@
         </div>
 
         {{-- Card --}}
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl shadow-slate-200/60 dark:shadow-none border border-slate-100 dark:border-gray-700 overflow-hidden">
+        <div class="bg-white dark:bg-[#1e293b] rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
             
             {{-- Progress Bar Visual --}}
             <div class="h-1.5 bg-slate-100 dark:bg-gray-700 w-full relative">

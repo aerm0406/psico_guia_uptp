@@ -155,7 +155,7 @@
         </script>
     </head>
     <body class="preload font-sans antialiased overflow-hidden bg-gray-100 dark:bg-gray-900">
-    <div class="w-full bg-gray-100 dark:bg-gray-900 flex flex-col overflow-hidden" style="height: 100dvh;" x-data="{ 
+    <div class="w-full bg-gray-100 dark:bg-gray-900 flex flex-col overflow-hidden" style="height: 100dvh;" @toggle-chat.window="isChatOpen = !isChatOpen" x-data="{ 
         isChatOpen: false, 
         open: false, 
         sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' 
@@ -493,7 +493,7 @@
                             <button
                                 type="button"
                                 @if(!request()->routeIs('chat.*'))
-                                    @click="isChatOpen = !isChatOpen"
+                                    @click="$dispatch('toggle-chat')"
                                 @endif
                                 class="group flex items-center gap-3 h-11 w-full rounded-xl transition-all duration-200 relative"
                                 :class="[
@@ -510,6 +510,7 @@
                                 >Mensajes</span>
                                 @php $unreadMsgs = \App\Models\User::contarMensajesNoLeidos(auth()->id()); @endphp
                                 <span class="chat-badge absolute -top-0.5 min-w-[18px] h-[18px] px-0.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white dark:border-gray-800 shadow"
+                                      data-count="{{ $unreadMsgs }}"
                                       style="{{ $unreadMsgs > 0 ? '' : 'display: none;' }}"
                                 >
                                     {{ $unreadMsgs > 99 ? '99+' : $unreadMsgs }}

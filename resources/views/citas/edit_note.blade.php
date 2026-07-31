@@ -2,7 +2,7 @@
     <style>
         /* Forzar contraste notorio entre fondo y contenedores en modo oscuro */
         html.dark .en-bg { background-color: #020617 !important; }
-        html.dark .en-header { background-color: #0f172a !important; border-bottom-color: #1e293b !important; }
+        html.dark .en-header { background-color: #1e293b !important; border-bottom-color: #334155 !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important; }
         html.dark .en-card { background-color: #0f172a !important; border-color: #1e293b !important; }
     </style>
     <div class="min-h-screen bg-[#f8fafc] en-bg pb-20" x-data="clinicalNoteEditor()">
